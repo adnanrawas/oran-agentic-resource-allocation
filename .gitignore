@@ -1,6 +1,7 @@
-work/ORAN/.gitignore
+
 .kube/
 .vscode/
 venv/
 .env
 __pycache__/
+
