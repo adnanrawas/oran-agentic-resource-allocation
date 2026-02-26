@@ -1,6 +1,0 @@
-.kube/
-.vscode/
-venv/
-.env
-__pycache__/
-
