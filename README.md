@@ -17,3 +17,4 @@ resource allocation and RAN performance KPIs:
 - RRC Connection Establishment Success Rate
 - Physical Resource Block (PRB) Usage
 - OR.CellU.ActDeactMacCeScellDeact (SCell activation/deactivation counter)
+- MCS(Modulation and Coding Scheme Key)
