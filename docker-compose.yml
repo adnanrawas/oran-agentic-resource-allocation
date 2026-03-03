@@ -12,3 +12,6 @@ services:
     build: ./frontend
     image: adnanrawas/frontend-service:latest
 
+# mock:
+#   build: ./mock
+#  image: adnanrawas/mock-service:latest
