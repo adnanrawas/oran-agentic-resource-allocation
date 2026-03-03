@@ -1,0 +1,14 @@
+services:
+  agent:
+    build: ./agents
+    image: adnanrawas/agent-service:latest
+    container_name: agent-container
+
+  smo:
+    build: ./smo
+    image: adnanrawas/smo-service:latest
+
+  frontend:
+    build: ./frontend
+    image: adnanrawas/frontend-service:latest
+
