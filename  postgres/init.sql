@@ -1,0 +1,1 @@
+CREATE DATABASE oran_db;
