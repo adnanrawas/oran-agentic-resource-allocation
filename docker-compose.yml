@@ -3,30 +3,51 @@ x-db-dependency: &db_depends
   depends_on:
     postgres:
       condition: service_healthy
+      
+
+
 
 services:
+  master:
+      build: ./api
+      image: adnanrawas/master-service:latest
+      container_name: master-container
+      ports:
+        - "5000:5000"
+      <<: *db_depends
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:5000"]
+        interval: 0s
+        timeout: 10s
+        retries: 1
+        start_period: 5s
+        
+  
+      
   agent:
     build: ./agents
     image: adnanrawas/agent-service:latest
     ports:
       - "9000:9000"
     container_name: agent-container
-    <<: *db_depends
+    depends_on:
+      master:
+          #condition: service_started
+          condition: service_healthy
 
   smo:
     build: ./smo
     image: adnanrawas/smo-service:latest
     ports:
       - "9001:9001"
-    <<: *db_depends
+ 
 
   frontend:
     build: ./frontend
     image: adnanrawas/frontend-service:latest
     ports:
       - "9002:9002"
-    
-    <<: *db_depends
+   
 
 # mock:
 #   build: ./mock
@@ -46,8 +67,9 @@ services:
       - postgres_data_oran:/var/lib/postgresql/data # Persist data  
     healthcheck:
         test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"] # Check if PostgreSQL is ready 
-        interval: 5s
-        retries: 5
+        retries: 1
+        interval: 0s
+        timeout: 10s
 volumes:
     postgres_data_oran:
 
