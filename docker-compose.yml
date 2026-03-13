@@ -9,6 +9,8 @@ x-db-dependency: &db_depends
 
 services:
   master:
+      restart: unless-stopped
+      # stop_grace_period: 1s 
       build: ./api
       image: adnanrawas/master-service:latest
       container_name: master-container
@@ -17,14 +19,17 @@ services:
       <<: *db_depends
       healthcheck:
         test: ["CMD", "curl", "-f", "http://localhost:5000"]
-        interval: 0s
-        timeout: 10s
-        retries: 1
-        start_period: 5s
+        interval: 5m
+        timeout: 5s
+        retries: 3
+        start_period: 5m
+      
+
         
   
       
   agent:
+    # stop_grace_period: 1s 
     build: ./agents
     image: adnanrawas/agent-service:latest
     ports:
@@ -68,8 +73,9 @@ services:
     healthcheck:
         test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"] # Check if PostgreSQL is ready 
         retries: 1
-        interval: 0s
-        timeout: 10s
+        interval: 3m
+        timeout: 5s
+        start_period: 5m
 volumes:
     postgres_data_oran:
 
