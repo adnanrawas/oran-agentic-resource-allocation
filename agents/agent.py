@@ -1,8 +1,11 @@
 import aiohttp
 import asyncio
 
+from api_provider import APIProvider # Import the APIProvider class from the api_provider module
 MASTER_URL = "http://master:5000/agent"
 
+
+api_key = APIProvider().openrouter()
 async def main():
 
     data = {
