@@ -1,15 +1,17 @@
 import os
 
 class APIProvider:
-    def openrouter(self):
+    @staticmethod
+    def openrouter():
         return os.getenv('OPENROUTER_API_KEY')
-    
-    def openai(self):
+    @staticmethod 
+    def openai():
         return os.getenv('OPENAI_API_KEY')
-    
-    def anthropic(self):
+    @staticmethod
+    def anthropic():
         return os.getenv('ANTHROPIC_API_KEY')
     
-    def google(self):
+    @staticmethod
+    def google():
         return os.getenv('GOOGLE_API_KEY')
     

@@ -25,7 +25,9 @@ def agent():
 
 @app.route("/provider/openrouter", methods=["POST"])
 def openrouter_proxy():
-    OPENROUTER_API_KEY = APIProvider().openrouter()
+    # getting the openRouter api key using the api Provider class
+    OPENROUTER_API_KEY = APIProvider().openrouter() 
+    print("Using OpenRouter API Key:", OPENROUTER_API_KEY, flush=True)
     payload = request.json
     if payload is None:
         return jsonify({"error": "JSON body required"}), 400
@@ -39,17 +41,8 @@ def openrouter_proxy():
             # "HTTP-Referer": "<YOUR_SITE_URL>",
             # "X-OpenRouter-Title": "<YOUR_SITE_NAME>",
         },
-        data=json.dumps({
-            "model": "deepseek/deepseek-r1",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": "What is the meaning of life?"
-                }
-            ]
-        })
-       
-    )
+        data=json.dumps(payload)
+       )
 
     try:
         result = response.json()
