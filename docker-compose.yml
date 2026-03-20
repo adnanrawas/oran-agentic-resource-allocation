@@ -25,10 +25,11 @@ services:
         start_period: 5m
       environment:
         - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      
-
-        
-  
+        - POSTGRES_HOST=postgres
+        - POSTGRES_PORT=${POSTGRES_CONTAINER_PORT}
+        - POSTGRES_DB=${POSTGRES_DB}
+        - POSTGRES_USER=${POSTGRES_USER}
+        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       
   agent:
     # stop_grace_period: 1s 
@@ -75,7 +76,10 @@ services:
     ports:
       - "${POSTGRES_HOST_PORT}:${POSTGRES_CONTAINER_PORT}"
     volumes:
-      - postgres_data_oran:/var/lib/postgresql/data # Persist data  
+      - ./postgres:/docker-entrypoint-initdb.d
+      - postgres_data_oran:/var/lib/postgresql/data # Persist data
+    command: postgres -c max_connections=1024
+
     healthcheck:
         test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"] # Check if PostgreSQL is ready 
         retries: 1
@@ -84,6 +88,3 @@ services:
         start_period: 5m
 volumes:
     postgres_data_oran:
-
-  
-

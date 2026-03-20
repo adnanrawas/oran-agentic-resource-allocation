@@ -2,12 +2,28 @@ from flask import Flask, request, jsonify
 import requests
 import json
 from api_provider import APIProvider # Import the APIProvider class from the api_provider module
+from db_connection import get_db_connection
+
 
 app = Flask(__name__)
+
 
 @app.route("/")
 def home():
     return "OK", 200
+
+
+@app.route("/db/check")
+def db_check():
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT * FROM oran_metrics LIMIT 1;")
+                result = cur.fetchone()
+
+        return jsonify({"status": "connected", "result": result}), 200
+    except Exception as exc:
+        return jsonify({"status": "failed", "error": str(exc)}), 500
 
 @app.route("/agent", methods=["POST"])
 def agent():
