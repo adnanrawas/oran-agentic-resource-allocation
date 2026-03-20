@@ -12,7 +12,7 @@ integrated into the SMO to support human-in-the-loop decision-making.
 ## Scenario 1 – DU Resource Allocation
 ![Scenario 1](images/seanario1.jpg)
 
-## 📂 Project Structure
+## Project Structure
 
 oran-agentic-resource-allocation/
 ├── agents/               # Autonomous agent logic for resource allocation tasks
@@ -21,7 +21,7 @@ oran-agentic-resource-allocation/
 ├── images/               # Static assets, diagrams, and visual resources
 ├── init.sql              # Initial SQL script for database setup
 ├── llm/                  # Large Language Model integration
-├── mock/                 # Mock data and testing (DU/CU)
+├── mock/                 # Mock data and testing (CU/DU)
 ├── postgres/             # PostgreSQL database configurations and scripts
 ├── smo/                  # System management and orchestration modules
 ├── .env                  # Environment variables 
