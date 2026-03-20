@@ -15,32 +15,19 @@ integrated into the SMO to support human-in-the-loop decision-making.
 ## 📂 Project Structure
 
 oran-agentic-resource-allocation/
-
 ├── agents/               # Autonomous agent logic for resource allocation tasks
-
 ├── api/                  # REST API endpoints and business logic
-
-├── frontend/             # Frontend application (React/Vue/etc.)
-
+├── frontend/             # Frontend 
 ├── images/               # Static assets, diagrams, and visual resources
-
 ├── init.sql              # Initial SQL script for database setup
-
-├── llm/                  # Large Language Model integration and utilities
-
-├── mock/                 # Mock data and testing utilities
-
+├── llm/                  # Large Language Model integration
+├── mock/                 # Mock data and testing (DU/CU)
 ├── postgres/             # PostgreSQL database configurations and scripts
-
 ├── smo/                  # System management and orchestration modules
-
-├── .env                  # Environment variables (not tracked by Git)
-
-├── .gitignore            # Files and folders ignored by Git
-
+├── .env                  # Environment variables 
+├── .gitignore            
 ├── docker-compose.yml    # Docker container orchestration configuration
-
-└── README.md             # Project documentation
+└── README.md             
 
 
 ### The evaluation of the agent's results is performed using the following
