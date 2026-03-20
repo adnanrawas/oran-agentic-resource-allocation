@@ -9,9 +9,6 @@ integrated into the SMO to support human-in-the-loop decision-making.
 
 ![Architecture](images/architecture.gif)
 
-## Scenario 1 – DU Resource Allocation
-![Scenario 1](images/seanario1.jpg)
-
 ## 📂 Project Structure
 
 ```text
@@ -31,6 +28,8 @@ oran-agentic-resource-allocation/
 └── README.md             
 ```
 
+## Scenario 1 – DU Resource Allocation
+![Scenario 1](images/seanario1.jpg)
 ### The evaluation of the agent's results is performed using the following
 
 resource allocation and RAN performance KPIs:
