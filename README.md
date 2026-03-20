@@ -5,26 +5,43 @@ in the Distributed Unit (DU) and the Centralized Unit (CU)
 within O-RAN architectures. A LangGraph-based control layer is
 integrated into the SMO to support human-in-the-loop decision-making.
 
-## Architecture Diagram
-![Architecture](images/architecture.gif)
+## Architecture
 
+![Architecture](images/architecture.gif)
 
 ## Scenario 1 – DU Resource Allocation
 ![Scenario 1](images/seanario1.jpg)
 
-## Architecture Overview
-This project follows a modular architecture:
+## 📂 Project Structure
 
-- **`agents/`**: Contains agent logic for resource allocation.
-- **`api/`**: REST API endpoints for interacting with the system.
-- **`frontend/`**: User interface components.
-- **`images/`**: Static assets and visual resources.
-- **`llm/`**: Logic for large language model integration.
-- **`postgres/`**: Database scripts and configurations.
-- **`mock/`**: Mock data for testing.
-- **`smo/`**: System management and orchestration.
-- **`docker-compose.yml`**: Container orchestration setup.
-- **`.env`**: Environment variables.
+oran-agentic-resource-allocation/
+
+├── agents/               # Autonomous agent logic for resource allocation tasks
+
+├── api/                  # REST API endpoints and business logic
+
+├── frontend/             # Frontend application (React/Vue/etc.)
+
+├── images/               # Static assets, diagrams, and visual resources
+
+├── init.sql              # Initial SQL script for database setup
+
+├── llm/                  # Large Language Model integration and utilities
+
+├── mock/                 # Mock data and testing utilities
+
+├── postgres/             # PostgreSQL database configurations and scripts
+
+├── smo/                  # System management and orchestration modules
+
+├── .env                  # Environment variables (not tracked by Git)
+
+├── .gitignore            # Files and folders ignored by Git
+
+├── docker-compose.yml    # Docker container orchestration configuration
+
+└── README.md             # Project documentation
+
 
 ### The evaluation of the agent's results is performed using the following
 
