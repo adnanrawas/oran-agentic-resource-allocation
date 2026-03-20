@@ -12,23 +12,23 @@ integrated into the SMO to support human-in-the-loop decision-making.
 ## Scenario 1 – DU Resource Allocation
 ![Scenario 1](images/seanario1.jpg)
 
-## Project Structure
+## 📂 Project Structure
 
+```text
 oran-agentic-resource-allocation/
 ├── agents/               # Autonomous agent logic for resource allocation tasks
-├── api/                  # REST API endpoints and business logic
-├── frontend/             # Frontend 
+├── api/                  # REST API endpoints and logic (Flask)
+├── frontend/             # Frontend
 ├── images/               # Static assets, diagrams, and visual resources
 ├── init.sql              # Initial SQL script for database setup
 ├── llm/                  # Large Language Model integration
-├── mock/                 # Mock data and testing (CU/DU)
+├── mock/                 # Mock data and testing
 ├── postgres/             # PostgreSQL database configurations and scripts
-├── smo/                  # System management and orchestration modules
+├── smo/                  # System management and orchestration
 ├── .env                  # Environment variables 
 ├── .gitignore            
 ├── docker-compose.yml    # Docker container orchestration configuration
 └── README.md             
-
 
 ### The evaluation of the agent's results is performed using the following
 
