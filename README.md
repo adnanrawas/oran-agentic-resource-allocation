@@ -29,8 +29,7 @@ oran-agentic-resource-allocation/
 ├── .gitignore            
 ├── docker-compose.yml    # Docker container orchestration configuration
 └── README.md             
-
-
+```
 ### The evaluation of the agent's results is performed using the following
 
 resource allocation and RAN performance KPIs:
