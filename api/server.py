@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-import requests
+import requests, random
 import json
 from api_provider import APIProvider # Import the APIProvider class from the api_provider module
 from db_connection import get_db_connection
@@ -66,6 +66,19 @@ def openrouter_proxy():
         return (response.text, response.status_code, {"Content-Type": response.headers.get("Content-Type","text/plain")})
 
     return jsonify(result), response.status_code
+
+# This is a mock endpoint to simulate radio metrics for the agent.
+@app.route("/radio-metrics", methods=["GET"])
+def get_metrics():
+    try:
+        data = {
+            "throughput": random.randint(200,600),
+            "mcs": random.randint(5,28),
+            "prb": random.randint(10,100)
+        }
+        return jsonify(data)
+    except Exception as exc:
+           return jsonify({"status": "failed", "error": str(exc)}), 500
 
 
 

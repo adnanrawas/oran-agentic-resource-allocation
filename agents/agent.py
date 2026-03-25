@@ -45,6 +45,20 @@ async def agent_call_master_provider_openrouter_r1():
         }
         print(json.dumps(out, indent=2, ensure_ascii=False))
 
+
+@app.route("/radio-metrics", methods=["GET"])
+def get_metrics():
+
+    
+    data = {
+        "throughput": random.randint(200,600),
+        "mcs": random.randint(5,28),
+        "prb": random.randint(10,100)
+    }
+
+    return jsonify(data)
+
+
 async def main():
     # await agent_call_master_provider_openrouter_r1()
     await test_agent_db()
