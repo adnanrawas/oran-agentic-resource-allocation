@@ -1,73 +1,39 @@
 from senario_phase1 import get_metrics
 import json
 import operator
+from datetime import datetime
 import asyncio
-import subprocess
 import os
 from langgraph.graph import END, StateGraph, START
 from pathlib import Path
 from typing import Annotated, Dict, List, TypedDict
 import aiohttp
 MASTER_URL = "http://master:5000/provider/openrouter"
-
-METRICS_URL = "http://master:5000/radio-metrics"
 STATE_FILE = Path(__file__).with_name("simple_state_output.json")
 
 
-class AgentState(TypedDict):
+class AgentState(TypedDict,total=False):
     agent_name: str
     counter: int
     saved_to: str
-    metrics_history: Annotated[List[Dict[str, float]], operator.add]
+    metrics_history: Annotated[List[Dict[str, object]], operator.add]
+    logs: Annotated[List[str], operator.add]
+    final_answer: Dict[str, object]
     
  
 ##############################################################################
-#adding cyclic loop 
+
+def get_int_env(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except ValueError:
+        return default
 
 def should_continue(state: AgentState):
     if state["counter"] < 5:
         return "fetch_metrics"
     return "llm_reasoning"
 
-
-# async def llm_reasoning(state: AgentState):
-#     prompt = f"""
-# You are analyzing radio network performance over time.
-
-# We collected 5 steps of metrics:
-
-# {json.dumps(state['metrics_history'], indent=2)}
-
-# Your task is to evaluate performance based on:
-
-# 1. Throughput (higher is better)
-# 2. MCS (higher is better but depends on PRB)
-# 3. PRB usage (resource allocation efficiency)
-
-# Instructions:
-
-# - Identify which step has the BEST throughput
-# - Analyze how MCS changes relative to PRB
-
-# - Select the BEST overall PRB allocation step considering both throughput and MCS
-# - Provide a final decision
-
-# Return your answer in JSON format:
-
-# {{
-#   "best_step": <index>,
-#   "best_throughput": <value>,
-#   "analysis": "...",
-#   "decision": "...",
-#   "confidence": 0-1
-# }}
-# """
-#     data = {
-#       "model": "deepseek/deepseek-r1",
-#       "messages": [
-#         {"role":"user","content": prompt}   
-#       ]
-#     }
 
 async def llm_reasoning(state: AgentState):
     prompt = f"""
@@ -102,38 +68,58 @@ Return your answer in JSON format:
       ]
     }
 
-    print("RAW RESPONSE:", prompt)
-    async with aiohttp.ClientSession() as session:
-        async with session.post(MASTER_URL, json=data) as response:
-            raw_text = await response.text()
-            print("STATUS:", response.status)
-            print("RAW RESPONSE:", raw_text)
+    # print("PROMPT SENT:", prompt) #debugging: print the prompt being sent to the LLM
+    try:
+         LLM_TIMEOUT = get_int_env("LLM_TIMEOUT", 120)
+         timeout = aiohttp.ClientTimeout(total=LLM_TIMEOUT)
+         async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(MASTER_URL, json=data) as response:
+                raw_text = await response.text()
+                print("STATUS:", response.status)
+                print("RAW RESPONSE:", raw_text)
+    except aiohttp.ClientError as exc:
+                    return {
+                        "final_answer": {
+                            "model": data["model"],
+                            "status_code": None,
+                            "reasoning": None,
+                            "answer": None,
+                            "raw_result": str(exc),
+                        },
+                        "logs": [f"LLM request error: {exc}"]
+                      }
 
-            if response.status >= 400:
-                return {
-                    "final_answer": {
-                        "model": data["model"],
-                        "status_code": response.status,
-                        "reasoning": None,
-                        "answer": None,
-                        "raw_result": raw_text,
-                    },
-                    "logs": [f"LLM request failed with status {response.status}"]
-                }
-
+    try:
         result = json.loads(raw_text)
-        message = result.get("choices", [{}])[0].get("message", {})
-        content = message.get("content")
-        reasoning = message.get("reasoning_content")
-        out = {
+    except json.JSONDecodeError:  
+             return {
+             "final_answer": {
+            "model": data["model"],
+            "status_code": response.status,
+            "reasoning": None,
+            "answer": None,
+            "raw_result": raw_text,
+        },
+        "logs": ["LLM response was not valid JSON"]
+        }
+    message = result.get("choices", [{}])[0].get("message", {})
+    content = message.get("content")
+    reasoning = message.get("reasoning_content")
+    parsed_answer = None
+    if content:
+        try:
+            parsed_answer = json.loads(content)
+        except json.JSONDecodeError:
+            parsed_answer = {"raw_text": content}
+    out = {
             "model": data["model"],
             "status_code": response.status,
             "reasoning": reasoning,
-            "answer": content,
+            "answer": parsed_answer,
             "raw_result": result
         }
         
-        return {
+    return {
         "final_answer":out,
         "logs": [f"LLM decision: {out}"]
     }
@@ -196,8 +182,8 @@ def build_graph():
 
             
 def print_graph(app) -> None:
-    print("\nSimple LangGraph Workflow")
-    print("START -> fetch_metrics -> save_state -> END")
+    print("\nLangGraph Workflow")
+    print("START -> fetch_metrics -> (loop until counter == 5) -> llm_reasoning -> save -> END")
     print("\nMermaid:")
     try:
         print(app.get_graph().draw_mermaid())
@@ -211,10 +197,12 @@ async def main() -> None:
     png_bytes = app.get_graph().draw_mermaid_png()
 
 # Save it to the current directory (/app)
+    filename = f"workflow_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
     output_dir = Path("output")
     output_dir.mkdir(exist_ok=True)
-    Path("/app/output/workflow.png").write_bytes(png_bytes) 
-    print(f"Image saved to: {os.getcwd()}/output/workflow.png")    # Render and save to a high-quality PNG
+    output_path = output_dir / filename
+    output_path.write_bytes(png_bytes)
+    print(f"Image saved to: {os.getcwd()}/output/{filename}")    # Render and save to a high-quality PNG
     # save_attractive_graph(app)
     # initial_state: AgentState = {"agent_name": "Agent1", "counter": 0,"metrics_history": []}
     initial_state: AgentState = {
