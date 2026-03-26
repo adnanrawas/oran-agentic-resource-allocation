@@ -5,6 +5,6 @@ COPY . .
 RUN pip install -r requirements.txt
 # CMD ["python", "agent.py"]
 # CMD ["python", "senario_phase1.py"]
-
 # CMD ["python", "graph_state.py"]
+
 CMD ["python", "simple.py"]

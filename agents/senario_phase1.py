@@ -20,29 +20,29 @@ async def get_metrics():
 
 ############################################################
 
-async def main():
+# async def main():
 
-    for i in range(3):  # three iterations
-        state: AgentState = {
-            "name": "Agent1",
-            "metrics": [],
-            "counter": 0
-        }
-        data = await get_metrics()
+#     for i in range(3):  # three iterations
+#         state: AgentState = {
+#             "name": "Agent1",
+#             "metrics": [],
+#             "counter": 0
+#         }
+#         data = await get_metrics()
 
-        state["metrics"].append(data)
-        state["counter"] += 1
+#         state["metrics"].append(data)
+#         state["counter"] += 1
 
-        print("Iteration:", state["counter"])
-        print("Metrics:", data)
+#         print("Iteration:", state["counter"])
+#         print("Metrics:", data)
 
 
-        if data["prb"] > 40:
-            print("Configuration OK")
-            break
+#         if data["prb"] > 40:
+#             print("Configuration OK")
+#             break
 
-        else:
-            print("Configuration BAD")
+#         else:
+#             print("Configuration BAD")
     
 
-asyncio.run(main())
+# asyncio.run(main())

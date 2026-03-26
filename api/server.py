@@ -42,28 +42,38 @@ def agent():
 @app.route("/provider/openrouter", methods=["POST"])
 def openrouter_proxy():
     # getting the openRouter api key using the api Provider class
-    OPENROUTER_API_KEY = APIProvider().openrouter() 
-    print("Using OpenRouter API Key:", OPENROUTER_API_KEY, flush=True)
+    OPENROUTER_API_KEY = APIProvider().openrouter()
+    if not OPENROUTER_API_KEY:
+        return jsonify({"error": "OPENROUTER_API_KEY is not configured"}), 500
+
     payload = request.json
     if payload is None:
         return jsonify({"error": "JSON body required"}), 400
 
-    response = requests.post(
-        url="https://openrouter.ai/api/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json",
-            # optional:
-            # "HTTP-Referer": "<YOUR_SITE_URL>",
-            # "X-OpenRouter-Title": "<YOUR_SITE_NAME>",
-        },
-        data=json.dumps(payload)
-       )
-
+    try:
+        response = requests.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+                # optional:
+                # "HTTP-Referer": "<YOUR_SITE_URL>",
+                # "X-OpenRouter-Title": "<YOUR_SITE_NAME>",
+            },
+            data=json.dumps(payload),
+            # timeout=90,
+        )
+    except requests.RequestException as exc:
+        return jsonify({"error": "Failed to reach OpenRouter", "details": str(exc)}), 502
     try:
         result = response.json()
+        print("OpenRouter response:", result, flush=True)
     except ValueError:
-        return (response.text, response.status_code, {"Content-Type": response.headers.get("Content-Type","text/plain")})
+        return (
+            response.text,
+            response.status_code,
+            {"Content-Type": response.headers.get("Content-Type", "text/plain")},
+        )
 
     return jsonify(result), response.status_code
 

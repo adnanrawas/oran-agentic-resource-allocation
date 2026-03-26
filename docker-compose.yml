@@ -35,6 +35,8 @@ services:
     # stop_grace_period: 1s 
     build: ./agents
     image: adnanrawas/agent-service:latest
+    volumes:
+    - ./output:/app/output
     ports:
       - "9000:9000"
     container_name: agent-container
