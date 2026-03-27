@@ -9,7 +9,9 @@ from pathlib import Path
 from typing import Annotated, Dict, List, TypedDict
 import aiohttp
 MASTER_URL = "http://master:5000/provider/openrouter"
-STATE_FILE = Path(__file__).with_name("simple_state_output.json")
+RESULTS_DIR = Path(os.getenv("RESULTS_DIR", "/app/output"))
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+STATE_FILE = RESULTS_DIR / "simple_state_output.json"
 
 
 class AgentState(TypedDict,total=False):
@@ -30,7 +32,8 @@ def get_int_env(name: str, default: int) -> int:
         return default
 
 def should_continue(state: AgentState):
-    if state["counter"] < 5:
+    MAX_STEPS = get_int_env("MAX_STEPS", 2)
+    if state["counter"] < MAX_STEPS:
         return "fetch_metrics"
     return "llm_reasoning"
 
@@ -65,7 +68,9 @@ Return your answer in JSON format:
       "model": "deepseek/deepseek-r1",
       "messages": [
         {"role":"user","content": prompt}   
-      ]
+      ],
+       "response_format": {"type": "json_object"},
+       "stream": False
     }
 
     # print("PROMPT SENT:", prompt) #debugging: print the prompt being sent to the LLM
@@ -135,18 +140,39 @@ async def fetch_metrics(state: AgentState) -> Dict[str, object]:
     }
 
 # i shoud save in the database 
+# def save_state(state: AgentState) -> Dict[str, object]:
+#     snapshot = {
+#         "agent_name": state["agent_name"],
+#         "counter": state["counter"],
+#         "metrics_history": state["metrics_history"],
+#         "final_answer": state.get("final_answer"),
+#     }
+#     Path(state["saved_to"]).write_text(json.dumps(snapshot, indent=2), encoding="utf-8")
+#     return {
+#         "logs": [f"save_state -> saved to {state['saved_to']}"]
+#     }
+
+
 def save_state(state: AgentState) -> Dict[str, object]:
     snapshot = {
         "agent_name": state["agent_name"],
         "counter": state["counter"],
         "metrics_history": state["metrics_history"],
         "final_answer": state.get("final_answer"),
-    }
-    Path(state["saved_to"]).write_text(json.dumps(snapshot, indent=2), encoding="utf-8")
-    return {
-        "logs": [f"save_state -> saved to {state['saved_to']}"]
+        "logs": state.get("logs", []),
+        "saved_at": datetime.now().isoformat(),
     }
 
+    output_path = Path(state["saved_to"])
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(snapshot, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    return {
+        "logs": [f"save_state -> saved to {output_path}"]
+    }
 
 # def build_graph():
 #     workflow = StateGraph(AgentState)
