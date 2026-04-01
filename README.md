@@ -7,7 +7,7 @@ integrated into the SMO to support human-in-the-loop decision-making.
 
 ## Architecture
 
-![Architecture](images/architecture.gif)
+![Architecture](images/architectureV2.gif)
 
 ## 📂 Project Structure
 
