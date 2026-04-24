@@ -50,15 +50,24 @@ The considered slice types are:
 - URLLC: Ultra-Reliable Low-Latency Communications, focused on delay-sensitive and highly reliable services
 - mMTC: Massive Machine Type Communications, focused on large-scale IoT connectivity
 
-<!-- ## NSGA-II Results
+### Implementation
+
+This project uses [PyGAD](https://pygad.readthedocs.io/) version `3.2.0` to implement NSGA-II for multi-objective optimization.
+- PyGAD documentation: [pygad.readthedocs.io](https://pygad.readthedocs.io/)
+- PyGAD repository: [ahmedfgad/GeneticAlgorithmPython](https://github.com/ahmedfgad/GeneticAlgorithmPython)
+- PyGAD 3.2.0 release notes: [PyGAD-3.2.0](https://pygad.readthedocs.io/en/latest/pygad_more.html#save-solutions)
+
+!-- ## NSGA-II 
 
 The following figures show preliminary NSGA-II results based on global resource limits and phase KPI constraints. User-specific requirements are not yet included in the optimization loop.
+![Global Resource Limits](images/Global_Resource_Limit.jpg)
+![SLA Constraints](images/SLA_Constraints.jpg) 
+![Best Resources by Slice](images/Best_Resources_by Slice.jpg)
+![KPIs of Best Solution](images/KPIs_of_Best_Solution)
+![Front 0 Pareto Solutionsn](images/Front_0_Pareto_Solutions_Slice_KPIs.jpg)
+ Full JSON output: [nsga2_result.json](results/baseline/nsga2_result.json)
+ PowerPoint presentation: [NSGA-II_Baseline.pptx](slides/NSGA-II_Baseline.pptx)
 
-![Resources](images/resources.png)
-![KPIs](images/kpis.png)
-![Global Limits](images/limits.png)
-![Phase Constraints](images/phase_constraints.png) -->
-<!-- link of powerpoint -->
 
 
 ## Scenario 1 – DU Resource Allocation

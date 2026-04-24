@@ -12,7 +12,11 @@ arrival_rates = {
     "URLLC": 10.0,
     "mMTC": 5.0,
 }
-
+LATENCY_PRIORITY = {
+    "URLLC": 0.3,
+    "eMBB": 1.0,
+    "mMTC": 2.0,
+}
 ##########################################################################################################
 # bad fitness value
 BAD_FITNESS = [-1e12, -1e12, -1e12, -1e12]
@@ -83,7 +87,7 @@ def compute_latency(candidate, slice_name):
        return float("inf")
     Latency = L_fix_i + 1 / (m * (1 - rho + 1e-6))
     Latency_ms = converting_latency_to_milliseconds(Latency)
-    return Latency_ms
+    return  LATENCY_PRIORITY[slice_name] * Latency_ms
 
 def compute_throughput_all(candidate):
     # eMBB
@@ -151,13 +155,13 @@ def fitness_func(ga_instance, solution, solution_idx):
 
 gene_space = [
     # eMBB
-    {"low": 0.0, "high": B_max}, {"low": 0.0, "high": 100.0}, {"low": 0.0, "high": P_max}, {"low": 0.0, "high": 100.0},
+    {"low": 0.0, "high": B_max}, {"low": 0.0, "high": 100.0}, {"low": 100, "high": 100}, {"low": 0.0, "high": 100.0},
 
     # URLLC
-    {"low": 0.0, "high": B_max}, {"low": 0.0, "high": 100.0}, {"low": 0.0, "high": P_max}, {"low": 0.0, "high": 100.0},
+    {"low": 0.0, "high": B_max}, {"low": 0.0, "high": 100.0}, {"low": 100, "high": 100}, {"low": 0.0, "high": 100.0},
 
     # mMTC
-    {"low": 0.0, "high": 100.0}, {"low": 0.0, "high": 15.0}, {"low": 0.0, "high": P_max}, {"low": 0.0, "high": 15.0},
+    {"low": 0.0, "high": 100.0}, {"low": 0.0, "high": 15.0}, {"low": 100, "high": 100}, {"low": 0.0, "high": 15.0},
 ]
 
 
@@ -256,7 +260,7 @@ result = {
         "throughput_total": float(kpis["throughput_total"]),
         "latency_total_ms": float(kpis["latency_total_ms"]),
         "cost_total_eur": float(kpis["cost_total_eur"]),
-        "energy_total": float(kpis["energy_total"]),
+        # "energy_total": float(kpis["energy_total"]),
     },
     "within_global_limits": bool(within_global_limits(candidate, B_max, C_max, P_max, S_max)),
     "front_0": front_0_data,    
