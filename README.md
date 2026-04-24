@@ -74,7 +74,7 @@ The following figures show preliminary NSGA-II results based on global resource 
 - [KPIs of Best Solution](images/KPIs_of_Best_Solution)
 - [Front 0 Pareto Solutionsn](images/Front_0_Pareto_Solutions_Slice_KPIs.jpg)
 - Full JSON output: [nsga2_result.json](results/baseline/nsga2_result.json)
-- PowerPoint presentation: [NSGA-II_Baseline.pptx](slides/NSGA-II_Baseline.pptx)
+<!-- - PowerPoint presentation: [NSGA-II_Baseline.pptx](slides/NSGA-II_Baseline.pptx) -->
 
 ## Scenario 1 – DU Resource Allocation
 ![Scenario 1](images/seanario1.jpg)
