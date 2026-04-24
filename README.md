@@ -60,15 +60,21 @@ This project uses [PyGAD](https://pygad.readthedocs.io/) version `3.2.0` to impl
 !-- ## NSGA-II 
 
 The following figures show preliminary NSGA-II results based on global resource limits and phase KPI constraints. User-specific requirements are not yet included in the optimization loop.
-![Global Resource Limits](images/Global_Resource_Limit.jpg)
+<!-- ![Global Resource Limits](images/Global_Resource_Limit.jpg)
 ![SLA Constraints](images/SLA_Constraints.jpg) 
 ![Best Resources by Slice](images/Best_Resources_by Slice.jpg)
 ![KPIs of Best Solution](images/KPIs_of_Best_Solution)
 ![Front 0 Pareto Solutionsn](images/Front_0_Pareto_Solutions_Slice_KPIs.jpg)
  Full JSON output: [nsga2_result.json](results/baseline/nsga2_result.json)
- PowerPoint presentation: [NSGA-II_Baseline.pptx](slides/NSGA-II_Baseline.pptx)
+ PowerPoint presentation: [NSGA-II_Baseline.pptx](slides/NSGA-II_Baseline.pptx) -->
 
-
+- [Global Resource Limits](images/Global_Resource_Limit.jpg)
+- [SLA Constraints](images/SLA_Constraints.jpg) 
+- [Best Resources by Slice](images/Best_Resources_by Slice.jpg)
+- [KPIs of Best Solution](images/KPIs_of_Best_Solution)
+- [Front 0 Pareto Solutionsn](images/Front_0_Pareto_Solutions_Slice_KPIs.jpg)
+- Full JSON output: [nsga2_result.json](results/baseline/nsga2_result.json)
+- PowerPoint presentation: [NSGA-II_Baseline.pptx](slides/NSGA-II_Baseline.pptx)
 
 ## Scenario 1 – DU Resource Allocation
 ![Scenario 1](images/seanario1.jpg)
