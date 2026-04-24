@@ -71,7 +71,7 @@ The following figures show preliminary NSGA-II results based on global resource 
 - [Global Resource Limits](images/Global_Resource_Limit.jpg)
 - [SLA Constraints](images/SLA_Constraints.jpg) 
 - [Best Resources by Slice](images/Best_Resources_by_Slice.jpg)
-- [KPIs of Best Solution](images/KPIs_of_Best_Solution)
+- [KPIs of Best Solution](images/KPIs_of_Best_Solution.jpg)
 - [Front 0 Pareto Solutionsn](images/Front_0_Pareto_Solutions_Slice_KPIs.jpg)
 - Full JSON output: [nsga2_result.json](results/baseline/nsga2_result.json)
 <!-- - PowerPoint presentation: [NSGA-II_Baseline.pptx](slides/NSGA-II_Baseline.pptx) -->
