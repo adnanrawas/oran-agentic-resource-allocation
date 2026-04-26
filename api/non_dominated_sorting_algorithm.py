@@ -266,6 +266,6 @@ result = {
     "front_0": front_0_data,    
 }
 
-print(json.dumps(result, indent=4))
+return json.dumps(result, indent=4)
 
 
