@@ -1,6 +1,9 @@
 import aiohttp
 import asyncio
 import json
+from flask import Flask, request, jsonify
+app = Flask(__name__)
+
  # Import the APIProvider class from the api_provider module
 MASTER_URL = "http://master:5000/provider/openrouter"
 db_connection = "http://master:5000/db/check"

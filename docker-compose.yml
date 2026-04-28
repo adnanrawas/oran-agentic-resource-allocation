@@ -56,11 +56,14 @@ services:
       - "9001:9001"
  
 
-  # frontend:
-  #   build: ./frontend
-  #   image: adnanrawas/frontend-service:latest
-  #   ports:
-  #     - "9002:9002"
+  frontend:
+    build: ./frontend
+    image: adnanrawas/frontend-service:latest
+    ports:
+      - "9002:9002"
+    depends_on:
+      master:
+        condition: service_healthy
    
 
 # mock:

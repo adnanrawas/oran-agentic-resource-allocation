@@ -7,4 +7,6 @@ RUN pip install -r requirements.txt
 # CMD ["python", "senario_phase1.py"]
 # CMD ["python", "graph_state.py"]
 
-CMD ["python", "simple.py"]
+# CMD ["python", "simple.py"]
+
+CMD ["python", "exp1_simple_loop_similarity_search.py"]

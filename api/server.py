@@ -3,11 +3,11 @@ import requests, random
 import json
 from api_provider import APIProvider # Import the APIProvider class from the api_provider module
 from db_connection import get_db_connection
-from non_dominated_sorting_algorithm import get_optimizer_nsag2
+from non_dominated_sorting_algorithm import  run_optimizer
 
 app = Flask(__name__)
 # URL for the agent container to call run the loop graph
-AGENT_URL = "http://agent-container:9000/run-graph"
+AGENT_URL = "http://agent:9000/select-best-offer"
 
 def get_top_3_offers_nsag2():
     raw_optimizer_json = get_optimizer_nsag2()
@@ -108,7 +108,7 @@ def optimizer_offers():
     try:
         body = request.get_json()
         user_request = body.get("user_request") # get the user request from the body of the post request
-        offers = get_top_3_offers_nsag2()
+        offers = run_optimizer()
         agent_response = requests.post(
             AGENT_URL,
             json={
@@ -118,13 +118,14 @@ def optimizer_offers():
             timeout=120
         )
 
-        agent_response.raise_for_status()
-        # Get the JSON response from the agent container
+        # agent_response.raise_for_status()
+        # # Get the JSON response from the agent container
         agent_result = agent_response.json()
         return jsonify({
             "status": "success",
-            "offers": offers,
-            "agent_response": agent_result
+             "user_request":user_request,
+             "offers": offers,
+             "agent_response": agent_result
         }), 200
 
     except Exception as exc:

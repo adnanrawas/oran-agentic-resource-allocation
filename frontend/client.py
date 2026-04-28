@@ -5,8 +5,10 @@ payload = {
 }
 
 response = requests.post(
-    "http://localhost:5000/optimizer_nsag2/offers",
-    json=payload
+    "http://master:5000/optimizer_nsag2/offers",
+    json=payload,
+    timeout=30,
 )
 
+response.raise_for_status()
 print(response.json())
