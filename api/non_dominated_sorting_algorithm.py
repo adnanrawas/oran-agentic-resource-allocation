@@ -164,8 +164,6 @@ gene_space = [
     {"low": 0.0, "high": 100.0}, {"low": 0.0, "high": 15.0}, {"low": 100, "high": 100}, {"low": 0.0, "high": 15.0},
 ]
 
-
-
 ga_instance = pygad.GA(
     num_generations=100,
     sol_per_pop=60,
@@ -177,8 +175,8 @@ ga_instance = pygad.GA(
     parent_selection_type="nsga2",
     mutation_percent_genes=10,
     crossover_probability=0.1,
-    save_solutions=True,
-    save_best_solutions=True,
+    # save_solutions=True,
+    # save_best_solutions=True,
 )
 def run_optimizer():
     ga_instance.run()

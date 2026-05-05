@@ -98,16 +98,11 @@ Required JSON format:
     }
 
     try:
-        # timeout = aiohttp.ClientTimeout(total=get_int_env("LLM_TIMEOUT", 120))
-
-        # async with aiohttp.ClientSession(timeout=timeout) as session:
-        #     async with session.post(MASTER_URL, json=data) as response:
-        #         raw_text = await response.text()
-
+     
         response = requests.post(
         MASTER_URL,
         json=data,
-        timeout=120
+        timeout=LLM_TIMEOUT
         )
 
         # result = json.loads(raw_text)
@@ -156,41 +151,27 @@ graph_app = build_graph()
 
 
 # getting the user request and save it in the state and invoke the graph for metrics similarity search and intent extraction          
-@app.route("/select-best-offer", methods=["POST"])
-def select_best_offer():
-    body = request.get_json()
-    user_request = body.get("user_request")
-    offers = body.get("offers")
-    print("Received user request:")
-    if not user_request:
-        return jsonify({"status": "failed", "error": "Missing user_request"}), 400
+# @app.route("/select-best-offer", methods=["POST"])
+# def select_best_offer():
+#     body = request.get_json()
+#     user_request = body.get("user_request")
+#     offers = body.get("offers")
+#     print("Received user request:")
+#     if not user_request:
+#         return jsonify({"status": "failed", "error": "Missing user_request"}), 400
 
-    if not offers:
-        return jsonify({"status": "failed", "error": "Missing offers"}), 400
-     # saving the user request and offers to be used in the next node   
-    state = {
-        "user_request": user_request,
-        "offers": offers,
-        "logs": ["Received request and offers"]
-    }
-    # calling the graph app to run the intent extraction and similarity search
-    final_state = graph_app.invoke(state)
+#     if not offers:
+#         return jsonify({"status": "failed", "error": "Missing offers"}), 400
+#      # saving the user request and offers to be used in the next node   
+#     state = {
+#         "user_request": user_request,
+#         "offers": offers,
+#         "logs": ["Received request and offers"]
+#     }
+#     # calling the graph app to run the intent extraction and similarity search
+#     final_state = graph_app.invoke(state)
 
-    return jsonify(final_state)
-    # temporary test response
-    # return jsonify({
-    #     "status": "success",
-    #     "message": "Agent received data",
-    #     # "user_request": user_request,
-    #     "offers_count": len(offers)
-    # }), 200
-
-
-
-
-
-
-
+#     return jsonify(final_state)
 
 
 

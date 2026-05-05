@@ -1,0 +1,674 @@
+{
+  "status": "done",
+  "model": "nvidia/llama-3.1-nemotron-70b-instruct",
+  "total_requests": 6,
+  "total_offers": 12,
+  "users": [
+    {
+      "id": 1,
+      "user_request": "I need very low latency for remote surgery.",
+      "expected_intent": "URLLC"
+    },
+    {
+      "id": 2,
+      "user_request": "I want high speed video streaming.",
+      "expected_intent": "eMBB"
+    },
+    {
+      "id": 3,
+      "user_request": "I have many IoT sensors with low power.",
+      "expected_intent": "mMTC"
+    },
+    {
+      "id": 4,
+      "user_request": "I need reliable communication for autonomous driving.",
+      "expected_intent": "URLLC"
+    },
+    {
+      "id": 5,
+      "user_request": "I want fast internet for watching 4K videos.",
+      "expected_intent": "eMBB"
+    },
+    {
+      "id": 6,
+      "user_request": "I need to connect thousands of smart meters.",
+      "expected_intent": "mMTC"
+    }
+  ],
+  "offers": [
+    {
+      "offer_id": 1,
+      "eMBB": {
+        "cost": 2.369765102907828,
+        "latency": 0.035460946205934325,
+        "throughput": 677.1006854700114
+      },
+      "URLLC": {
+        "cost": 2.056948660619129,
+        "latency": 0.02489792754604747,
+        "throughput": 289.2405630970535
+      },
+      "mMTC": {
+        "cost": 0.5996545758963334,
+        "latency": 0.1207195598639125,
+        "throughput": 397.645567203437
+      }
+    },
+    {
+      "offer_id": 2,
+      "eMBB": {
+        "cost": 2.369765102907828,
+        "latency": 0.035460946205934325,
+        "throughput": 677.1006854700114
+      },
+      "URLLC": {
+        "cost": 2.056948660619129,
+        "latency": 0.02489792754604747,
+        "throughput": 289.2405630970535
+      },
+      "mMTC": {
+        "cost": 9.006495439603917,
+        "latency": 0.1207195598639125,
+        "throughput": 397.645567203437
+      }
+    },
+    {
+      "offer_id": 3,
+      "eMBB": {
+        "cost": 2.369765102907828,
+        "latency": 0.035460946205934325,
+        "throughput": 677.1006854700114
+      },
+      "URLLC": {
+        "cost": 2.056948660619129,
+        "latency": 0.006377279624021464,
+        "throughput": 1129.0674834799538
+      },
+      "mMTC": {
+        "cost": 0.5996545758963334,
+        "latency": 0.1207195598639125,
+        "throughput": 397.645567203437
+      }
+    },
+    {
+      "offer_id": 4,
+      "eMBB": {
+        "cost": 2.369765102907828,
+        "latency": 0.035460946205934325,
+        "throughput": 677.1006854700114
+      },
+      "URLLC": {
+        "cost": 86.28320609706151,
+        "latency": 0.02489792754604747,
+        "throughput": 289.2405630970535
+      },
+      "mMTC": {
+        "cost": 0.5996545758963334,
+        "latency": 0.1207195598639125,
+        "throughput": 397.645567203437
+      }
+    },
+    {
+      "offer_id": 5,
+      "eMBB": {
+        "cost": 2.369765102907828,
+        "latency": 0.035460946205934325,
+        "throughput": 677.1006854700114
+      },
+      "URLLC": {
+        "cost": 2.056948660619129,
+        "latency": 0.02489792754604747,
+        "throughput": 289.2405630970535
+      },
+      "mMTC": {
+        "cost": 7.352935195499469,
+        "latency": 0.1207195598639125,
+        "throughput": 397.645567203437
+      }
+    },
+    {
+      "offer_id": 6,
+      "eMBB": {
+        "cost": 2.369765102907828,
+        "latency": 0.01919517333679831,
+        "throughput": 1250.613761275997
+      },
+      "URLLC": {
+        "cost": 2.056948660619129,
+        "latency": 0.02489792754604747,
+        "throughput": 289.2405630970535
+      },
+      "mMTC": {
+        "cost": 0.5996545758963334,
+        "latency": 0.1207195598639125,
+        "throughput": 397.645567203437
+      }
+    },
+    {
+      "offer_id": 7,
+      "eMBB": {
+        "cost": 2.369765102907828,
+        "latency": 0.035460946205934325,
+        "throughput": 677.1006854700114
+      },
+      "URLLC": {
+        "cost": 47.222441408419314,
+        "latency": 0.02489792754604747,
+        "throughput": 289.2405630970535
+      },
+      "mMTC": {
+        "cost": 0.5996545758963334,
+        "latency": 0.1207195598639125,
+        "throughput": 397.645567203437
+      }
+    },
+    {
+      "offer_id": 8,
+      "eMBB": {
+        "cost": 2.369765102907828,
+        "latency": 0.035460946205934325,
+        "throughput": 677.1006854700114
+      },
+      "URLLC": {
+        "cost": 2.056948660619129,
+        "latency": 0.02489792754604747,
+        "throughput": 289.2405630970535
+      },
+      "mMTC": {
+        "cost": 11.507171351140567,
+        "latency": 0.1207195598639125,
+        "throughput": 397.645567203437
+      }
+    },
+    {
+      "offer_id": 9,
+      "eMBB": {
+        "cost": 1.5752337827360408,
+        "latency": 0.03816477390237224,
+        "throughput": 629.1519750250325
+      },
+      "URLLC": {
+        "cost": 1.6696229048154265,
+        "latency": 0.025566613960039692,
+        "throughput": 281.67714084553467
+      },
+      "mMTC": {
+        "cost": 0.5996545758963334,
+        "latency": 0.10674986583462971,
+        "throughput": 449.679054203447
+      }
+    },
+    {
+      "offer_id": 10,
+      "eMBB": {
+        "cost": 2.369765102907828,
+        "latency": 0.02889760505432079,
+        "throughput": 830.8183448042448
+      },
+      "URLLC": {
+        "cost": 2.056948660619129,
+        "latency": 0.02489792754604747,
+        "throughput": 289.2405630970535
+      },
+      "mMTC": {
+        "cost": 0.5996545758963334,
+        "latency": 0.1207195598639125,
+        "throughput": 397.645567203437
+      }
+    },
+    {
+      "offer_id": 11,
+      "eMBB": {
+        "cost": 6.189316298992287,
+        "latency": 0.035460946205934325,
+        "throughput": 677.1006854700114
+      },
+      "URLLC": {
+        "cost": 2.056948660619129,
+        "latency": 0.02489792754604747,
+        "throughput": 289.2405630970535
+      },
+      "mMTC": {
+        "cost": 0.5996545758963334,
+        "latency": 0.1207195598639125,
+        "throughput": 397.645567203437
+      }
+    },
+    {
+      "offer_id": 12,
+      "eMBB": {
+        "cost": 2.369765102907828,
+        "latency": 0.035460946205934325,
+        "throughput": 677.1006854700114
+      },
+      "URLLC": {
+        "cost": 2.056948660619129,
+        "latency": 0.02489792754604747,
+        "throughput": 289.2405630970535
+      },
+      "mMTC": {
+        "cost": 13.432066569112369,
+        "latency": 0.1207195598639125,
+        "throughput": 397.645567203437
+      }
+    }
+  ],
+  "llm_selection": {
+    "result": {
+      "analyzed_selection": {
+        "analyzed_users": [
+          {
+            "intent_summary": "Ultra-low latency for remote surgery applications.",
+            "priority_ranking": [
+              "latency",
+              "throughput",
+              "cost"
+            ],
+            "requirements": {
+              "cost": {
+                "level": "unknown",
+                "max_cost": null
+              },
+              "latency": {
+                "level": "low",
+                "max_ms": null
+              },
+              "throughput": {
+                "level": "unknown",
+                "min_mbps": null
+              }
+            },
+            "slice_type": "URLLC",
+            "use_case": "healthcare",
+            "user_id": "1"
+          },
+          {
+            "intent_summary": "High throughput for seamless video streaming.",
+            "priority_ranking": [
+              "throughput",
+              "latency",
+              "cost"
+            ],
+            "requirements": {
+              "cost": {
+                "level": "unknown",
+                "max_cost": null
+              },
+              "latency": {
+                "level": "unknown",
+                "max_ms": null
+              },
+              "throughput": {
+                "level": "high",
+                "min_mbps": null
+              }
+            },
+            "slice_type": "eMBB",
+            "use_case": "streaming",
+            "user_id": "2"
+          },
+          {
+            "intent_summary": "Massive connectivity for low-power IoT sensors.",
+            "priority_ranking": [
+              "latency",
+              "throughput",
+              "cost"
+            ],
+            "requirements": {
+              "cost": {
+                "level": "unknown",
+                "max_cost": null
+              },
+              "latency": {
+                "level": "unknown",
+                "max_ms": null
+              },
+              "throughput": {
+                "level": "unknown",
+                "min_mbps": null
+              }
+            },
+            "slice_type": "mMTC",
+            "use_case": "IoT",
+            "user_id": "3"
+          },
+          {
+            "intent_summary": "Ultra-reliable communication for autonomous driving safety.",
+            "priority_ranking": [
+              "latency",
+              "throughput",
+              "cost"
+            ],
+            "requirements": {
+              "cost": {
+                "level": "unknown",
+                "max_cost": null
+              },
+              "latency": {
+                "level": "unknown",
+                "max_ms": null
+              },
+              "throughput": {
+                "level": "unknown",
+                "min_mbps": null
+              }
+            },
+            "slice_type": "URLLC",
+            "use_case": "automotive",
+            "user_id": "4"
+          },
+          {
+            "intent_summary": "High-speed internet for uninterrupted 4K video watching.",
+            "priority_ranking": [
+              "throughput",
+              "latency",
+              "cost"
+            ],
+            "requirements": {
+              "cost": {
+                "level": "unknown",
+                "max_cost": null
+              },
+              "latency": {
+                "level": "unknown",
+                "max_ms": null
+              },
+              "throughput": {
+                "level": "high",
+                "min_mbps": null
+              }
+            },
+            "slice_type": "eMBB",
+            "use_case": "streaming",
+            "user_id": "5"
+          },
+          {
+            "intent_summary": "Massive-scale connectivity for smart meter deployments.",
+            "priority_ranking": [
+              "latency",
+              "throughput",
+              "cost"
+            ],
+            "requirements": {
+              "cost": {
+                "level": "unknown",
+                "max_cost": null
+              },
+              "latency": {
+                "level": "unknown",
+                "max_ms": null
+              },
+              "throughput": {
+                "level": "unknown",
+                "min_mbps": null
+              }
+            },
+            "slice_type": "mMTC",
+            "use_case": "IoT",
+            "user_id": "6"
+          }
+        ]
+      },
+      "llm_selection": {
+        "assignments": [],
+        "error": "Expecting value: line 1 column 1 (char 0)"
+      },
+      "logs": [
+        "request received",
+        "intent analyzer completed",
+        "offer selection error: Expecting value: line 1 column 1 (char 0)"
+      ],
+      "offers": [
+        {
+          "URLLC": {
+            "cost": 2.056948660619129,
+            "latency": 0.02489792754604747,
+            "throughput": 289.2405630970535
+          },
+          "eMBB": {
+            "cost": 2.369765102907828,
+            "latency": 0.035460946205934325,
+            "throughput": 677.1006854700114
+          },
+          "mMTC": {
+            "cost": 0.5996545758963334,
+            "latency": 0.1207195598639125,
+            "throughput": 397.645567203437
+          },
+          "offer_id": 1
+        },
+        {
+          "URLLC": {
+            "cost": 2.056948660619129,
+            "latency": 0.02489792754604747,
+            "throughput": 289.2405630970535
+          },
+          "eMBB": {
+            "cost": 2.369765102907828,
+            "latency": 0.035460946205934325,
+            "throughput": 677.1006854700114
+          },
+          "mMTC": {
+            "cost": 9.006495439603917,
+            "latency": 0.1207195598639125,
+            "throughput": 397.645567203437
+          },
+          "offer_id": 2
+        },
+        {
+          "URLLC": {
+            "cost": 2.056948660619129,
+            "latency": 0.006377279624021464,
+            "throughput": 1129.0674834799538
+          },
+          "eMBB": {
+            "cost": 2.369765102907828,
+            "latency": 0.035460946205934325,
+            "throughput": 677.1006854700114
+          },
+          "mMTC": {
+            "cost": 0.5996545758963334,
+            "latency": 0.1207195598639125,
+            "throughput": 397.645567203437
+          },
+          "offer_id": 3
+        },
+        {
+          "URLLC": {
+            "cost": 86.28320609706151,
+            "latency": 0.02489792754604747,
+            "throughput": 289.2405630970535
+          },
+          "eMBB": {
+            "cost": 2.369765102907828,
+            "latency": 0.035460946205934325,
+            "throughput": 677.1006854700114
+          },
+          "mMTC": {
+            "cost": 0.5996545758963334,
+            "latency": 0.1207195598639125,
+            "throughput": 397.645567203437
+          },
+          "offer_id": 4
+        },
+        {
+          "URLLC": {
+            "cost": 2.056948660619129,
+            "latency": 0.02489792754604747,
+            "throughput": 289.2405630970535
+          },
+          "eMBB": {
+            "cost": 2.369765102907828,
+            "latency": 0.035460946205934325,
+            "throughput": 677.1006854700114
+          },
+          "mMTC": {
+            "cost": 7.352935195499469,
+            "latency": 0.1207195598639125,
+            "throughput": 397.645567203437
+          },
+          "offer_id": 5
+        },
+        {
+          "URLLC": {
+            "cost": 2.056948660619129,
+            "latency": 0.02489792754604747,
+            "throughput": 289.2405630970535
+          },
+          "eMBB": {
+            "cost": 2.369765102907828,
+            "latency": 0.01919517333679831,
+            "throughput": 1250.613761275997
+          },
+          "mMTC": {
+            "cost": 0.5996545758963334,
+            "latency": 0.1207195598639125,
+            "throughput": 397.645567203437
+          },
+          "offer_id": 6
+        },
+        {
+          "URLLC": {
+            "cost": 47.222441408419314,
+            "latency": 0.02489792754604747,
+            "throughput": 289.2405630970535
+          },
+          "eMBB": {
+            "cost": 2.369765102907828,
+            "latency": 0.035460946205934325,
+            "throughput": 677.1006854700114
+          },
+          "mMTC": {
+            "cost": 0.5996545758963334,
+            "latency": 0.1207195598639125,
+            "throughput": 397.645567203437
+          },
+          "offer_id": 7
+        },
+        {
+          "URLLC": {
+            "cost": 2.056948660619129,
+            "latency": 0.02489792754604747,
+            "throughput": 289.2405630970535
+          },
+          "eMBB": {
+            "cost": 2.369765102907828,
+            "latency": 0.035460946205934325,
+            "throughput": 677.1006854700114
+          },
+          "mMTC": {
+            "cost": 11.507171351140567,
+            "latency": 0.1207195598639125,
+            "throughput": 397.645567203437
+          },
+          "offer_id": 8
+        },
+        {
+          "URLLC": {
+            "cost": 1.6696229048154265,
+            "latency": 0.025566613960039692,
+            "throughput": 281.67714084553467
+          },
+          "eMBB": {
+            "cost": 1.5752337827360408,
+            "latency": 0.03816477390237224,
+            "throughput": 629.1519750250325
+          },
+          "mMTC": {
+            "cost": 0.5996545758963334,
+            "latency": 0.10674986583462971,
+            "throughput": 449.679054203447
+          },
+          "offer_id": 9
+        },
+        {
+          "URLLC": {
+            "cost": 2.056948660619129,
+            "latency": 0.02489792754604747,
+            "throughput": 289.2405630970535
+          },
+          "eMBB": {
+            "cost": 2.369765102907828,
+            "latency": 0.02889760505432079,
+            "throughput": 830.8183448042448
+          },
+          "mMTC": {
+            "cost": 0.5996545758963334,
+            "latency": 0.1207195598639125,
+            "throughput": 397.645567203437
+          },
+          "offer_id": 10
+        },
+        {
+          "URLLC": {
+            "cost": 2.056948660619129,
+            "latency": 0.02489792754604747,
+            "throughput": 289.2405630970535
+          },
+          "eMBB": {
+            "cost": 6.189316298992287,
+            "latency": 0.035460946205934325,
+            "throughput": 677.1006854700114
+          },
+          "mMTC": {
+            "cost": 0.5996545758963334,
+            "latency": 0.1207195598639125,
+            "throughput": 397.645567203437
+          },
+          "offer_id": 11
+        },
+        {
+          "URLLC": {
+            "cost": 2.056948660619129,
+            "latency": 0.02489792754604747,
+            "throughput": 289.2405630970535
+          },
+          "eMBB": {
+            "cost": 2.369765102907828,
+            "latency": 0.035460946205934325,
+            "throughput": 677.1006854700114
+          },
+          "mMTC": {
+            "cost": 13.432066569112369,
+            "latency": 0.1207195598639125,
+            "throughput": 397.645567203437
+          },
+          "offer_id": 12
+        }
+      ],
+      "users": [
+        {
+          "expected_intent": "URLLC",
+          "id": 1,
+          "user_request": "I need very low latency for remote surgery."
+        },
+        {
+          "expected_intent": "eMBB",
+          "id": 2,
+          "user_request": "I want high speed video streaming."
+        },
+        {
+          "expected_intent": "mMTC",
+          "id": 3,
+          "user_request": "I have many IoT sensors with low power."
+        },
+        {
+          "expected_intent": "URLLC",
+          "id": 4,
+          "user_request": "I need reliable communication for autonomous driving."
+        },
+        {
+          "expected_intent": "eMBB",
+          "id": 5,
+          "user_request": "I want fast internet for watching 4K videos."
+        },
+        {
+          "expected_intent": "mMTC",
+          "id": 6,
+          "user_request": "I need to connect thousands of smart meters."
+        }
+      ]
+    },
+    "status": "success"
+  }
+}

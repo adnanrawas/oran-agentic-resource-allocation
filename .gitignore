@@ -3,3 +3,5 @@
 venv/
 .env
 __pycache__/
+agents/exp1_simple_loop_similarity_search.py
+agents/exp2_banch.py
