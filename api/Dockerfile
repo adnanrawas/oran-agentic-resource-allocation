@@ -18,4 +18,4 @@ EXPOSE 5000
 
 # CMD ["python", "non_dominated_sorting_algorithm_2.py"]
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "300", "--graceful-timeout", "300", "server:app"]
+CMD ["gunicorn", "-w", "2", "-k", "gthread", "--threads", "8", "-b", "0.0.0.0:5000", "server:app"]

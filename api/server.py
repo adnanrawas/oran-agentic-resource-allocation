@@ -9,13 +9,14 @@ from non_dominated_sorting_algorithm import  run_optimizer
 import traceback
 from pathlib import Path
 import os
+import time
 app = Flask(__name__)
 # This is the master server that will receive the user request from the frontend, call the optimizer to get the offers, and then call the agent.
 EXECUTOR = ThreadPoolExecutor(max_workers=2)
 JOBS_DIR = Path("/app/output/jobs")
 JOBS_DIR.mkdir(parents=True, exist_ok=True)
 AGENT_URL = "http://agent:9000/select-best-offer"
-LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT",300))  # default = 300
+LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT",120))  # default = 120
 #it can change depends on the model used 
 MODEL_NAME = os.getenv("MODEL_NAME", "nvidia/llama-3.1-nemotron-70b-instruct") 
 NSGA2_FILE = Path("/app/results/storage/baseline/nsga2_result.json")
@@ -371,21 +372,37 @@ def run_offer_selection_job(job_id, requests_payload):
         # }
 
         # llm_raw_result = call_openrouter(llm_payload)
-         # Step 1: start agent job
-        start = requests.post(f"{AGENT_URL}/start", json={
-        "users": users,
-         "offers": offers
-        }, timeout=10)
+        # Step 1: start agent job
+        start = requests.post(
+        f"{AGENT_URL}/start",
+        json={
+            "users": users,
+            "offers": offers
+        },
+        timeout=10
+    )
+        start.raise_for_status()
+
         agent_job_id = start.json()["agent_job_id"]
-        while True:
-          r = requests.get(f"{AGENT_URL}/jobs/{agent_job_id}", timeout=10)
-          agent_data = r.json()
-          if agent_data["status"] == "done":
+
+        deadline = time.monotonic() + LLM_TIMEOUT + 30
+
+        while time.monotonic() < deadline:
+            r = requests.get(f"{AGENT_URL}/jobs/{agent_job_id}", timeout=10)
+            r.raise_for_status()
+            agent_data = r.json()
+
+            if agent_data["status"] == "done":
                 agent_result = agent_data["result"]
                 break
-          if agent_data["status"] == "failed":
-                raise RuntimeError("Agent failed")
-          time.sleep(5)
+
+            if agent_data["status"] == "failed":
+                raise RuntimeError(agent_data.get("error", "Agent failed"))
+
+            time.sleep(5)
+        else:
+            raise TimeoutError("Agent job polling timed out")
+
         # agent_response = requests.post(
         # AGENT_URL,
         # json={

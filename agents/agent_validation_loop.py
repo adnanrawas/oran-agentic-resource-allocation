@@ -1,4 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor
 import os, logging, traceback, json
 from flask import Flask, request, jsonify
 from langgraph.graph import StateGraph, START, END
@@ -9,11 +8,9 @@ import re
 import time
 from pathlib import Path
 import uuid
-
-
 # client side agent 
 import requests
-
+from concurrent.futures import ThreadPoolExecutor
 class AgentState(TypedDict, total=False):
 
     users: List[Dict[str, object]] #offers list by users
@@ -36,7 +33,7 @@ MODEL_NAME = os.getenv("MODEL_NAME", "nvidia/llama-3.1-nemotron-70b-instruct")
 LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT",120))  
 JOBS_DIR=Path("/app/output/agent_jobs")
 JOBS_DIR.mkdir(parents=True, exist_ok=True)
-
+EXECUTOR = ThreadPoolExecutor(max_workers=2)
 ####################################################
 
 
@@ -56,18 +53,38 @@ def start_agent():
         "status": "queued"
     }), 202
 
-def run_agent_job(agent_job_id, data):
-    save_agent_job(agent_job_id, {"status": "running"})
+def run_agent_job(agent_job_id, body):
+    try:
+        save_agent_job(agent_job_id, {
+            "agent_job_id": agent_job_id,
+            "status": "running"
+        })
 
-    # LLM call here (can take 5 min)
-    result = call_llm(data)
+        users = body.get("users", [])
+        offers = body.get("offers", [])
 
-    save_agent_job(agent_job_id, {
-        "status": "done",
-        "result": result
-    })
+        state = {
+            "users": users,
+            "offers": offers,
+            "logs": ["background request received"]
+        }
 
-@app.get("/jobs/<agent_job_id>")
+        final_state = graph_app.invoke(state)
+
+        save_agent_job(agent_job_id, {
+            "agent_job_id": agent_job_id,
+            "status": "done",
+            "result": final_state
+        })
+
+    except Exception as exc:
+        save_agent_job(agent_job_id, {
+            "agent_job_id": agent_job_id,
+            "status": "failed",
+            "error": str(exc)
+        })
+
+@app.get("/select-best-offer/jobs/<agent_job_id>")
 def get_agent_job(agent_job_id):
     return jsonify(load_agent_job(agent_job_id))
 
@@ -308,36 +325,36 @@ def build_graph():
 graph_app = build_graph()
 
 
-@app.route("/select-best-offer", methods=["POST"])
-def select_best_offer():
+# @app.route("/select-best-offer", methods=["POST"]) #async version 
+# def select_best_offer():
 
-    try:
+#     try:
 
-        body = request.get_json()
+#         body = request.get_json()
 
-        users = body.get("users", [])
-        offers = body.get("offers", [])
+#         users = body.get("users", [])
+#         offers = body.get("offers", [])
 
-        state = {
-            "users": users,
-            "offers": offers,
-            "logs": ["request received"]
-        }
+#         state = {
+#             "users": users,
+#             "offers": offers,
+#             "logs": ["request received"]
+#         }
 
-        final_state = graph_app.invoke(state)
+#         final_state = graph_app.invoke(state)
 
-        return jsonify({
-            "status": "success",
-            "result": final_state
-        }), 200
+#         return jsonify({
+#             "status": "success",
+#             "result": final_state
+#         }), 200
 
-    except Exception as exc:
-        app.logger.exception("select_best_offer failed")
-        return jsonify({
-            "status": "failed",
-            "error": str(exc),
-            "traceback": traceback.format_exc() if DEBUG_MODE else None
-        }), 500
+#     except Exception as exc:
+#         app.logger.exception("select_best_offer failed")
+#         return jsonify({
+#             "status": "failed",
+#             "error": str(exc),
+#             "traceback": traceback.format_exc() if DEBUG_MODE else None
+#         }), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=9000)
