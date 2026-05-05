@@ -15,7 +15,7 @@ EXECUTOR = ThreadPoolExecutor(max_workers=2)
 JOBS_DIR = Path("/app/output/jobs")
 JOBS_DIR.mkdir(parents=True, exist_ok=True)
 AGENT_URL = "http://agent:9000/select-best-offer"
-LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT",120))  # default = 60
+LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT",300))  # default = 300
 #it can change depends on the model used 
 MODEL_NAME = os.getenv("MODEL_NAME", "nvidia/llama-3.1-nemotron-70b-instruct") 
 NSGA2_FILE = Path("/app/results/storage/baseline/nsga2_result.json")
@@ -371,20 +371,34 @@ def run_offer_selection_job(job_id, requests_payload):
         # }
 
         # llm_raw_result = call_openrouter(llm_payload)
-    
-        agent_response = requests.post(
-        AGENT_URL,
-        json={
+         # Step 1: start agent job
+        start = requests.post(f"{AGENT_URL}/start", json={
         "users": users,
-        "offers": offers
-        },
-        timeout=LLM_TIMEOUT
-        )
+         "offers": offers
+        }, timeout=10)
+        agent_job_id = start.json()["agent_job_id"]
+        while True:
+          r = requests.get(f"{AGENT_URL}/jobs/{agent_job_id}", timeout=10)
+          agent_data = r.json()
+          if agent_data["status"] == "done":
+                agent_result = agent_data["result"]
+                break
+          if agent_data["status"] == "failed":
+                raise RuntimeError("Agent failed")
+          time.sleep(5)
+        # agent_response = requests.post(
+        # AGENT_URL,
+        # json={
+        # "users": users,
+        # "offers": offers
+        # },
+        # timeout=LLM_TIMEOUT
+        # )
 
-        agent_response.raise_for_status()
-        agent_result = agent_response.json()
-        app.logger.info("agent_result=%s", agent_result)
-
+        # agent_response.raise_for_status()
+        # agent_result = agent_response.json()
+        # app.logger.info("agent_result=%s", agent_result)
+         
         save_job(job_id, MODEL_NAME, {
         "status": "done",
         "model": MODEL_NAME,
@@ -528,3 +542,20 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
 
 ###########################################################################################################################################
+###############flow#####################
+
+#. client → server
+#  "Start the job"
+
+#2. server → client
+#   "OK, job_id = abc123"
+
+#3. background job:
+#   server → agent → LLM → agent → server
+#   server saves result
+
+#4. client → server
+#   "What is status of job_id abc123?"
+
+#5. server → client
+ #2  "running" or "done" + result

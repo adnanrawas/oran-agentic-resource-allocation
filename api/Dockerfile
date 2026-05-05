@@ -1,6 +1,4 @@
 FROM python:3.9-slim
-LLM_TIMEOUT = int(os.getenv("GUNICORN_TIMEOUT",120))  
-
 # setting the working directory in the container
 WORKDIR /app
 
@@ -20,4 +18,4 @@ EXPOSE 5000
 
 # CMD ["python", "non_dominated_sorting_algorithm_2.py"]
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", GUNICORN_TIMEOUT, "--graceful-timeout", GUNICORN_TIMEOUT, "server:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "300", "--graceful-timeout", "300", "server:app"]

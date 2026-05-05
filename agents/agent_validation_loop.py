@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import os, logging, traceback, json
 from flask import Flask, request, jsonify
 from langgraph.graph import StateGraph, START, END
@@ -6,6 +7,9 @@ from typing import TypedDict, Dict, List, Annotated
 import operator
 import re
 import time
+from pathlib import Path
+import uuid
+
 
 # client side agent 
 import requests
@@ -30,7 +34,8 @@ MASTER_URL = "http://master:5000/provider/openrouter"
 # MODEL_NAME = "deepseek/deepseek-r1"
 MODEL_NAME = os.getenv("MODEL_NAME", "nvidia/llama-3.1-nemotron-70b-instruct") 
 LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT",120))  
-
+JOBS_DIR=Path("/app/output/agent_jobs")
+JOBS_DIR.mkdir(parents=True, exist_ok=True)
 
 ####################################################
 
@@ -38,6 +43,48 @@ LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT",120))
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "agent running"}), 200
+# start background job 
+@app.post("/select-best-offer/start")
+def start_agent():
+    data = request.json
+    agent_job_id = str(uuid.uuid4())
+
+    EXECUTOR.submit(run_agent_job, agent_job_id, data)
+
+    return jsonify({
+        "agent_job_id": agent_job_id,
+        "status": "queued"
+    }), 202
+
+def run_agent_job(agent_job_id, data):
+    save_agent_job(agent_job_id, {"status": "running"})
+
+    # LLM call here (can take 5 min)
+    result = call_llm(data)
+
+    save_agent_job(agent_job_id, {
+        "status": "done",
+        "result": result
+    })
+
+@app.get("/jobs/<agent_job_id>")
+def get_agent_job(agent_job_id):
+    return jsonify(load_agent_job(agent_job_id))
+
+def save_agent_job(agent_job_id, data):
+    job_file = JOBS_DIR / f"{agent_job_id}.json"
+
+    with open(job_file, "w") as f:
+        json.dump(data, f)
+
+def load_agent_job(agent_job_id):
+    job_file = JOBS_DIR / f"{agent_job_id}.json"
+
+    if not job_file.exists():
+        return {"status": "not_found"}
+
+    with open(job_file, "r") as f:
+        return json.load(f)
 
 
 def intent_analyzer_node(state: AgentState):

@@ -38,6 +38,8 @@ services:
       volumes:
         - ./results:/app/results/storage
         - ./output:/app/output
+      env_file:
+      - .env
       
   agent:
     # stop_grace_period: 1s 
@@ -45,6 +47,7 @@ services:
     image: adnanrawas/agent-service:latest
     volumes:
     - ./output:/app/output
+    - ./output:/app/storage
     ports:
       - "9000:9000"
     container_name: agent-container
@@ -53,6 +56,7 @@ services:
     environment:
       MODEL_NAME: ${MODEL_NAME}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      
   
    
     healthcheck:
@@ -70,6 +74,8 @@ services:
   frontend:
     build: ./frontend
     image: adnanrawas/frontend-service:latest
+    env_file:
+      - .env
     ports:
       - "9002:9002"
     depends_on:

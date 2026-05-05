@@ -1,9 +1,8 @@
 import requests
 import time
 import os
-
-
-LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT", 120))  
+TIMEOUT_client_server= int(os.getenv("TIMEOUT_client_server", 10))
+POLL_INTERVAL_cleint = int(os.getenv("POLL_INTERVAL_cleint", 4))
 payload = {
     "user_request": "I need ultra reliable low latency communication with low cost for my application"
 }
@@ -69,7 +68,7 @@ job_id = job["job_id"]
 while True:
     status_response = requests.get(
         f"http://master:5000/optimizer_nsag2/offers/{job_id}",
-        timeout=LLM_TIMEOUT,
+        timeout=TIMEOUT_client_server,
     )
     status_response.raise_for_status()
     data = status_response.json()
@@ -86,4 +85,4 @@ while True:
         print(data)
         raise RuntimeError(data.get("error"))
 
-    time.sleep(2)
+    time.sleep(POLL_INTERVAL_cleint)
