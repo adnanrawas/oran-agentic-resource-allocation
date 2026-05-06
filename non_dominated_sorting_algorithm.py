@@ -1,8 +1,9 @@
 import pygad
 import json
 import numpy as np
+from pathlib import Path
 
-
+Path("results/baseline").mkdir(exist_ok=True)
 rng = np.random.default_rng()
 SLICE_NAMES = ("eMBB", "URLLC", "mMTC")
 
@@ -274,4 +275,7 @@ def run_optimizer():
 
 if __name__ == "__main__":
     result = run_optimizer()
+    with open("results/nsga2_result.json", "w") as f:
+      json.dump(result, f, indent=2)
+
   

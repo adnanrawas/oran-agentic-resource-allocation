@@ -8,6 +8,7 @@ import re
 import time
 from pathlib import Path
 import uuid
+from datetime import datetime
 # client side agent 
 import requests
 from concurrent.futures import ThreadPoolExecutor
@@ -70,10 +71,11 @@ def run_agent_job(agent_job_id, body):
         }
 
         final_state = graph_app.invoke(state)
-
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         save_agent_job(agent_job_id, {
             "agent_job_id": agent_job_id,
             "status": "done",
+            "timestamp": timestamp,
             "result": final_state
         })
 
@@ -95,6 +97,7 @@ def save_agent_job(agent_job_id, data):
         json.dump(data, f)
 
 def load_agent_job(agent_job_id):
+
     job_file = JOBS_DIR / f"{agent_job_id}.json"
 
     if not job_file.exists():
@@ -324,7 +327,7 @@ def build_graph():
 
 graph_app = build_graph()
 
-
+#sycronous version of the agent loop
 # @app.route("/select-best-offer", methods=["POST"]) #async version 
 # def select_best_offer():
 

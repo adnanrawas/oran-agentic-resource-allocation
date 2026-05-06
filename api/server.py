@@ -3,6 +3,7 @@ import uuid
 from flask import Flask, request, jsonify
 import requests, random
 import json
+from datetime import datetime
 from api_provider import APIProvider # Import the APIProvider class from the api_provider module
 from db_connection import get_db_connection
 from non_dominated_sorting_algorithm import  run_optimizer
@@ -10,6 +11,7 @@ import traceback
 from pathlib import Path
 import os
 import time
+#naming the output folder
 app = Flask(__name__)
 # This is the master server that will receive the user request from the frontend, call the optimizer to get the offers, and then call the agent.
 EXECUTOR = ThreadPoolExecutor(max_workers=2)
@@ -20,6 +22,129 @@ LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT",120))  # default = 120
 #it can change depends on the model used 
 MODEL_NAME = os.getenv("MODEL_NAME", "nvidia/llama-3.1-nemotron-70b-instruct") 
 NSGA2_FILE = Path("/app/results/storage/baseline/nsga2_result.json")
+
+#client will call /optimizer_nsag2/offers endpoint 
+#first function is called by the client and then agent start############################################################       
+@app.route("/optimizer_nsag2/offers", methods=["POST"])
+def optimizer_offers():
+    
+    body = request.get_json(silent=True) #taking the user request from the body of the body request  
+
+    if isinstance(body, list):
+        requests_payload = body 
+    elif isinstance(body, dict):
+        requests_payload = body.get("requests", [])
+    else:
+        requests_payload = []
+
+    if not requests_payload:
+        return jsonify({
+            "status": "failed",
+            "error": "Missing requests list"
+        }), 400
+
+    job_id = str(uuid.uuid4())
+    save_job(job_id, MODEL_NAME, {"status": "queued", "model": MODEL_NAME})
+    EXECUTOR.submit(run_offer_selection_job, job_id, requests_payload)
+
+    return jsonify({
+        "status": "queued",
+        "job_id": job_id
+    }), 202
+#first function is called by the client and then agent end############################################################     
+#client will call /optimizer_nsag2/offers -> endpoint  -> caling start job (agent call) and wait for the result in the background and save it in the local file and then client will call /optimizer_nsag2/offers/<job_id> to get the result of the job
+# second caling the agnet to run the loop and select the best offer 
+#job in the background to run the offer
+def run_offer_selection_job(job_id, requests_payload):
+    try:
+        save_job(job_id, MODEL_NAME, {"status": "running", "model": MODEL_NAME})
+        raw_offers = load_offers_from_file() # loading the offer from local file 
+        offers = [compact_offer(offer) for offer in raw_offers]
+
+        users = []
+        for item in requests_payload:
+            user_request = item.get("user_request")
+            if not user_request:
+                continue
+
+            users.append({
+                "id": item.get("id"),
+                "user_request": user_request,
+                "expected_intent": item.get("expected_intent"),
+            })
+
+        if not users:
+            save_job(job_id,MODEL_NAME, {
+                "status": "failed",
+                "model": MODEL_NAME,
+                "error": "No valid user_request values found"
+            })
+            return
+            
+
+        if len(users) > len(offers):   
+            save_job(job_id, MODEL_NAME, {
+           "status": "failed",
+           "model": MODEL_NAME,
+           "error": "Number of users cannot be greater than the number of candidate offers"
+           })
+            return
+         
+        # Step 1: start agent job
+        start = requests.post(
+        f"{AGENT_URL}/start",
+        json={
+            "users": users,
+            "offers": offers
+        },
+        timeout=10
+    )
+        start.raise_for_status()
+
+        agent_job_id = start.json()["agent_job_id"]
+
+        deadline = time.monotonic() + LLM_TIMEOUT + 30
+
+        while time.monotonic() < deadline:
+            r = requests.get(f"{AGENT_URL}/jobs/{agent_job_id}", timeout=10)
+            r.raise_for_status()
+            agent_data = r.json()
+
+            if agent_data["status"] == "done":
+                agent_result = agent_data["result"]
+                break
+
+            if agent_data["status"] == "failed":
+                raise RuntimeError(agent_data.get("error", "Agent failed"))
+
+            time.sleep(5)
+        else:
+            raise TimeoutError("Agent job polling timed out")
+        # agent_response.raise_for_status()
+        # agent_result = agent_response.json()
+        # app.logger.info("agent_result=%s", agent_result)
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+ 
+        save_job(job_id, MODEL_NAME, {
+        "created_at": timestamp,    
+        "status": "done",
+        "model": MODEL_NAME,
+        "total_requests": len(users),
+        "total_offers": len(offers),
+        "users": users,
+        "offers": offers,
+        "llm_selection": agent_result
+    })
+
+    except Exception as exc:
+        traceback.print_exc()
+        save_job(job_id, MODEL_NAME, {
+            "status": "failed",
+            "model": MODEL_NAME,
+            "error": str(exc)
+        })
+###################################################### end of server agent call############################################################
+###################################################### utilities functions ##################################################################
 
 def job_file(job_id, name_of_model):
     safe_model = name_of_model.replace("/", "_").replace(":", "_").replace(" ", "_")
@@ -46,11 +171,11 @@ def get_top_3_offers_nsag2():
     slice_offers = data["front_0"]["solutions_front_0"][:3]
 
     return slice_offers
-
+###################################################### end utilities functions ##################################################################
 @app.route("/")
 def home():
     return "OK", 200
-
+#######################################################################################################################
 @app.route("/db/check")
 def db_check():
     try:
@@ -62,6 +187,7 @@ def db_check():
         return jsonify({"status": "connected", "result": result}), 200
     except Exception as exc:
         return jsonify({"status": "failed", "error": str(exc)}), 500
+##########################################     #############################################################################
 
 @app.route("/agent", methods=["POST"])
 def agent():
@@ -77,6 +203,7 @@ def agent():
 
     return jsonify(response)
 
+############################################## calling the provider Cloud #######################################################################
 @app.route("/provider/openrouter", methods=["POST"])
 def openrouter_proxy():
     # getting the openRouter api key using the api Provider class
@@ -115,6 +242,7 @@ def openrouter_proxy():
 
     return jsonify(result), response.status_code
 
+############################################## calling the provider Cloud end   #######################################################################
 # This is a mock endpoint to simulate radio metrics for the agent.
 @app.route("/radio-metrics", methods=["GET"])
 def get_metrics():
@@ -173,51 +301,22 @@ def compact_offer(offer):
             "cost": kpis.get("cost_eur", {}).get("eMBB"),
             "latency": kpis.get("latency_ms", {}).get("eMBB"),
             "throughput": kpis.get("throughput", {}).get("eMBB"),
+            "energy": kpis.get("energy", {}).get("eMBB")
         },
         "URLLC": {
             "cost": kpis.get("cost_eur", {}).get("URLLC"),
             "latency": kpis.get("latency_ms", {}).get("URLLC"),
             "throughput": kpis.get("throughput", {}).get("URLLC"),
+            "energy": kpis.get("energy", {}).get("URLLC")
         },
         "mMTC": {
             "cost": kpis.get("cost_eur", {}).get("mMTC"),
             "latency": kpis.get("latency_ms", {}).get("mMTC"),
             "throughput": kpis.get("throughput", {}).get("mMTC"),
+            "energy": kpis.get("energy", {}).get("mMTC")
         }
     }
 ##############################################################################################################################################
-def build_multi_user_prompt(users, offers):
-    return f"""
-You are selecting Pareto-optimal network offers for multiple users.
-
-Task:
-- assign exactly one offer to each user
-- use each offer_id at most once
-- explain briefly why the offer matches the user request
-
-KPI meaning:
-- lower latency is better
-- lower cost is better
-- higher throughput is better
-
-
-Users:
-{json.dumps(users, indent=2)}
-
-Candidate offers:
-{json.dumps(offers, indent=2)}
-
-Return JSON only in this exact format:
-{{
-  "assignments": [
-    {{
-      "user_id": "<user id>",
-      "offer_id": <offer id>,
-      "reason": "<short reason>"
-    }}
-  ]
-}}
-"""
 #TEST to be replaced with proxy to openrouter
 def call_openrouter(payload):
     OPENROUTER_API_KEY = APIProvider().openrouter()
@@ -238,227 +337,6 @@ def call_openrouter(payload):
 
 ###########################################################################################################################
 
-
-##the basline# 
-# #job in the background to run the offer
-# def run_offer_selection_job(job_id, requests_payload):
-#     try:
-#         # sa
-#         save_job(job_id, MODEL_NAME, {"status": "running", "model": MODEL_NAME})
-#         raw_offers = load_offers_from_file()
-#         offers = [compact_offer(offer) for offer in raw_offers]
-
-#         users = []
-#         for item in requests_payload:
-#             user_request = item.get("user_request")
-#             if not user_request:
-#                 continue
-
-#             users.append({
-#                 "id": item.get("id"),
-#                 "user_request": user_request,
-#                 "expected_intent": item.get("expected_intent"),
-#             })
-
-#         if not users:
-#             save_job(job_id,MODEL_NAME, {
-#                 "status": "failed",
-#                 "model": MODEL_NAME,
-#                 "error": "No valid user_request values found"
-#             })
-#             return
-            
-
-#         if len(users) > len(offers):   
-#             save_job(job_id, MODEL_NAME, {
-#            "status": "failed",
-#            "model": MODEL_NAME,
-#            "error": "Number of users cannot be greater than the number of candidate offers"
-#            })
-#             return
-         
-#         prompt = build_multi_user_prompt(users, offers)
-
-#         llm_payload = {
-#             "model": MODEL_NAME,
-#             "messages": [{"role": "user", "content": prompt}],
-#             "response_format": {"type": "json_object"},
-#             "stream": False,
-#         }
-
-#         llm_raw_result = call_openrouter(llm_payload)
-#         message = llm_raw_result.get("choices", [{}])[0].get("message", {})
-#         content = message.get("content")
-
-#         if isinstance(content, str) and content.strip():
-#             try:
-#                 llm_selection = json.loads(content)
-#             except json.JSONDecodeError:
-#                 llm_selection = {"raw_content": content}
-#         else:
-#             llm_selection = {
-#                 "raw_message": message,
-#                 "raw_llm_response": llm_raw_result
-#             }
-
-#         save_job(job_id, MODEL_NAME, {
-#         "status": "done",
-#         "model": MODEL_NAME,
-#         "total_requests": len(users),
-#         "total_offers": len(offers),
-#         "users": users,
-#         "offers": offers,
-#         "llm_selection": llm_selection
-#     })
-
-#     except Exception as exc:
-#         traceback.print_exc()
-#         save_job(job_id, MODEL_NAME, {
-#             "status": "failed",
-#             "model": MODEL_NAME,
-#             "error": str(exc)
-#         })
- 
- ######################################################################3
- # end of the basline 
-
- 
-
-# calling the agnet
-#job in the background to run the offer
-def run_offer_selection_job(job_id, requests_payload):
-    try:
-        # sa
-        save_job(job_id, MODEL_NAME, {"status": "running", "model": MODEL_NAME})
-        raw_offers = load_offers_from_file()
-        offers = [compact_offer(offer) for offer in raw_offers]
-
-        users = []
-        for item in requests_payload:
-            user_request = item.get("user_request")
-            if not user_request:
-                continue
-
-            users.append({
-                "id": item.get("id"),
-                "user_request": user_request,
-                "expected_intent": item.get("expected_intent"),
-            })
-
-        if not users:
-            save_job(job_id,MODEL_NAME, {
-                "status": "failed",
-                "model": MODEL_NAME,
-                "error": "No valid user_request values found"
-            })
-            return
-            
-
-        if len(users) > len(offers):   
-            save_job(job_id, MODEL_NAME, {
-           "status": "failed",
-           "model": MODEL_NAME,
-           "error": "Number of users cannot be greater than the number of candidate offers"
-           })
-            return
-         
-        # prompt = build_multi_user_prompt(users, offers)
-
-        # llm_payload = {
-        #     "model": MODEL_NAME,
-        #     "messages": [{"role": "user", "content": prompt}],
-        #     "response_format": {"type": "json_object"},
-        #     "stream": False,
-        # }
-
-        # llm_raw_result = call_openrouter(llm_payload)
-        # Step 1: start agent job
-        start = requests.post(
-        f"{AGENT_URL}/start",
-        json={
-            "users": users,
-            "offers": offers
-        },
-        timeout=10
-    )
-        start.raise_for_status()
-
-        agent_job_id = start.json()["agent_job_id"]
-
-        deadline = time.monotonic() + LLM_TIMEOUT + 30
-
-        while time.monotonic() < deadline:
-            r = requests.get(f"{AGENT_URL}/jobs/{agent_job_id}", timeout=10)
-            r.raise_for_status()
-            agent_data = r.json()
-
-            if agent_data["status"] == "done":
-                agent_result = agent_data["result"]
-                break
-
-            if agent_data["status"] == "failed":
-                raise RuntimeError(agent_data.get("error", "Agent failed"))
-
-            time.sleep(5)
-        else:
-            raise TimeoutError("Agent job polling timed out")
-
-        # agent_response = requests.post(
-        # AGENT_URL,
-        # json={
-        # "users": users,
-        # "offers": offers
-        # },
-        # timeout=LLM_TIMEOUT
-        # )
-
-        # agent_response.raise_for_status()
-        # agent_result = agent_response.json()
-        # app.logger.info("agent_result=%s", agent_result)
-         
-        save_job(job_id, MODEL_NAME, {
-        "status": "done",
-        "model": MODEL_NAME,
-        "total_requests": len(users),
-        "total_offers": len(offers),
-        "users": users,
-        "offers": offers,
-        "llm_selection": agent_result
-    })
-
-    except Exception as exc:
-        traceback.print_exc()
-        save_job(job_id, MODEL_NAME, {
-            "status": "failed",
-            "model": MODEL_NAME,
-            "error": str(exc)
-        })
-       
-@app.route("/optimizer_nsag2/offers", methods=["POST"])
-def optimizer_offers():
-    body = request.get_json(silent=True)
-
-    if isinstance(body, list):
-        requests_payload = body
-    elif isinstance(body, dict):
-        requests_payload = body.get("requests", [])
-    else:
-        requests_payload = []
-
-    if not requests_payload:
-        return jsonify({
-            "status": "failed",
-            "error": "Missing requests list"
-        }), 400
-
-    job_id = str(uuid.uuid4())
-    save_job(job_id, MODEL_NAME, {"status": "queued", "model": MODEL_NAME})
-    EXECUTOR.submit(run_offer_selection_job, job_id, requests_payload)
-
-    return jsonify({
-        "status": "queued",
-        "job_id": job_id
-    }), 202
 @app.route("/optimizer_nsag2/offers/<job_id>", methods=["GET"])
 def optimizer_offers_status(job_id):
     data = load_job(job_id, MODEL_NAME)
@@ -470,91 +348,6 @@ def optimizer_offers_status(job_id):
     return jsonify(data), 200
 
 ###########################################################################################################################
-## synchronous version of the endpoint without background job for testing and development purposes
-# @app.route("/optimizer_nsag2/offers", methods=["POST"])
-# def optimizer_offers():
-#     try:
-#         body = request.get_json(silent=True)
-
-#         if isinstance(body, list):
-#             requests_payload = body
-#         elif isinstance(body, dict):
-#             requests_payload = body.get("requests", [])
-#         else:
-#             requests_payload = []
-
-#         if not requests_payload:
-#             return jsonify({
-#                 "status": "failed",
-#                 "error": "Missing requests list"
-#             }), 400
-
-#         print("BODY TYPE:", type(body), flush=True)
-#         print("TOTAL REQUESTS:", len(requests_payload), flush=True)
-#         print("FIRST ITEM:", requests_payload[0] if requests_payload else None, flush=True)
-
-#         # optimizer_result = run_optimizer()
-#         raw_offers = load_offers_from_file()[:6] # get the top 6 offers to have more options for the agent to choose from, this is just for testing and development purposes, in production we can send all the offers or implement pagination if the number of offers is too large
-
-#         offers = [compact_offer(offer) for offer in raw_offers]
-#         users = []
-#         for item in requests_payload:
-#             user_request = item.get("user_request")
-#             if not user_request:
-#                 continue
-
-#             users.append({
-#                 "id": item.get("id"),
-#                 "user_request": user_request,
-#                 "expected_intent": item.get("expected_intent"),
-#             })
-
-#         if not users:
-#             return jsonify({
-#                 "status": "failed",
-#                 "error": "No valid user_request values found"
-#             }), 400
-#         # Ensure we have enough offers for the users
-#         if len(users) > len(offers):
-#             return jsonify({
-#                 "status": "failed",
-#                 "error": "Number of users cannot be greater than the number of candidate offers"
-#             }), 400
-
-#         prompt = build_multi_user_prompt(users, offers)
-#         llm_payload = {
-#             "model": "deepseek/deepseek-r1",
-#             "messages": [{"role": "user", "content": prompt}],
-#             "response_format": {"type": "json_object"},
-#             "stream": False,
-#         }
-#         print("TOTAL USERS:", len(users), flush=True)
-#         print("TOTAL OFFERS:", len(offers), flush=True)
-#         llm_raw_result = call_openrouter(llm_payload)
-#         message = llm_raw_result.get("choices", [{}])[0].get("message", {})
-#         content = message.get("content", "{}")
-#         try:
-#             llm_selection = json.loads(content)
-#         except json.JSONDecodeError:
-#             llm_selection = {"raw_content": content}
-
-#         return jsonify({
-#             "status": "success",
-#             "total_requests": len(users),
-#             "total_offers": len(offers),
-#             "users": users,
-#             "offers": offers,
-#             "llm_selection": llm_selection,
-#             "raw_llm_response": llm_raw_result,
-#         }), 200
-
-#     except Exception as exc:
-#         traceback.print_exc()
-#         return jsonify({
-#             "status": "failed",
-#             "error": str(exc)
-#         }), 500
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
 

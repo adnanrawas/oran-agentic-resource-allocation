@@ -3,3 +3,4 @@ requests==2.32.5
 gunicorn==21.2.0
 psycopg[binary]==3.2.10
 pygad==3.2.0
+numpy==2.2.5
