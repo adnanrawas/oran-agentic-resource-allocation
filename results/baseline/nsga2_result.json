@@ -44,7 +44,7 @@
   "global_limits": {
     "bandwidth_max": 300.0,
     "compute_max": 500.0,
-    "power_max": 300.0,
+    "power_max": 100.0,
     "storage_max": 300.0
   },
   "phase_constraints": {
