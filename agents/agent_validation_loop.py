@@ -17,6 +17,7 @@ class AgentState(TypedDict, total=False):
     users: List[Dict[str, object]] #offers list by users
     offers: List[Dict[str, object]] #offers list by the optimizer
     analyzed_selection: Dict[str, object] # analysis of the llm selection from the intent analyzer node 
+    topsis_baseline: Dict[str, object] # baseline TOPSIS result fetched from the master service
     llm_selection: Dict[str, object] # selection by the llm
     validation_result: Dict[str, object] # result of the validation metrics calculation
     validator_feedback: Dict[str, object] # feedback from the validator
@@ -29,6 +30,7 @@ DEBUG_MODE = os.getenv("DEBUG", "false").lower() == "true"
 #####################################################
 #variables     
 MASTER_URL = "http://master:5000/provider/openrouter"
+MASTER_TOPSIS_URL = os.getenv("MASTER_TOPSIS_URL", "http://master:5000/ranking/topsis")
 # MODEL_NAME = "deepseek/deepseek-r1"
 MODEL_NAME = os.getenv("MODEL_NAME", "nvidia/llama-3.1-nemotron-70b-instruct") 
 LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT",120))  
@@ -36,11 +38,69 @@ JOBS_DIR=Path("/app/output/agent_jobs")
 JOBS_DIR.mkdir(parents=True, exist_ok=True)
 EXECUTOR = ThreadPoolExecutor(max_workers=2)
 ####################################################
+#TOPSIS
+######################################################################################################
+MASTER_TOPSIS_URL = os.getenv("MASTER_TOPSIS_URL", "http://master:5000/ranking/topsis")
+LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT", 120))
 
-
+@app.post("/topsis/save-jsons")
+def topsis_save_jsons():
+    try:
+        resp = requests.post(
+            MASTER_TOPSIS_URL,
+            json={"save": True},   # triggers master to save JSON files
+            timeout=LLM_TIMEOUT,
+        )
+        resp.raise_for_status()
+        return jsonify(resp.json()), 200
+    except Exception as exc:
+        app.logger.exception("topsis_save_jsons failed")
+        return jsonify({"status": "failed", "error": str(exc)}), 500
+#######################################################################################################        
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "agent running"}), 200
+
+
+# def fetch_topsis_baseline():
+#     response = requests.post(
+#         MASTER_TOPSIS_URL,
+#         json={"save": True},
+#         timeout=LLM_TIMEOUT,
+#     )
+#     response.raise_for_status()
+#     return response.json()
+
+
+# @app.post("/select-best-offer/topsis-baseline")
+# def trigger_topsis_baseline():
+#     try:
+#         return jsonify(fetch_topsis_baseline()), 200
+#     except Exception as exc:
+#         app.logger.exception("trigger_topsis_baseline failed")
+#         return jsonify({
+#             "status": "failed",
+#             "error": str(exc)
+#         }), 500
+
+
+# def topsis_baseline_node(state: AgentState):
+#     try:
+#         topsis_baseline = fetch_topsis_baseline()
+#         return {
+#             "topsis_baseline": topsis_baseline,
+#             "logs": ["topsis baseline fetched"]
+#         }
+#     except Exception as exc:
+#         return {
+#             "topsis_baseline": {
+#                 "status": "failed",
+#                 "error": str(exc)
+#             },
+#             "logs": [f"topsis baseline error: {exc}"]
+#         }
+
+
 # start background job 
 @app.post("/select-best-offer/start")
 def start_agent():
@@ -200,6 +260,7 @@ def call_llm(data):
 def offer_selection_node(state: AgentState):
     offers = state["offers"]
     analyzed_selection = state["analyzed_selection"]
+    topsis_baseline = state.get("topsis_baseline")
     feedback = state.get("validator_feedback")   
 
     prompt = f"""
@@ -243,6 +304,9 @@ def offer_selection_node(state: AgentState):
 
     ## Candidate offers
     {json.dumps(offers, indent=2)}
+
+    ## TOPSIS baseline
+    {json.dumps(topsis_baseline, indent=2) if topsis_baseline else "None"}
 
     ## Previous validator feedback
     {json.dumps(feedback, indent=2) if feedback else "None — first attempt"}
@@ -316,9 +380,11 @@ def build_graph():
     graph = StateGraph(AgentState)
 
     graph.add_node("intent_analyzer_node", intent_analyzer_node)
+    # graph.add_node("topsis_baseline_node", topsis_baseline_node)
     graph.add_node("offer_selection_node", offer_selection_node)
 
     graph.add_edge(START, "intent_analyzer_node")
+    # graph.add_edge("intent_analyzer_node", "topsis_baseline_node")
     graph.add_edge("intent_analyzer_node", "offer_selection_node")
     graph.add_edge("offer_selection_node", END)
 

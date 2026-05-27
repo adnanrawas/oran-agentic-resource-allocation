@@ -9,6 +9,8 @@ from db_connection import get_db_connection
 from non_dominated_sorting_algorithm import  run_optimizer
 import traceback
 from pathlib import Path
+# Import the TOPSIS helpers used to rank and persist baseline results.
+from algo_mcdm.topsis import DEFAULT_USE_CASES, rank_use_cases, save_rankings
 import os
 import time
 #naming the output folder
@@ -22,6 +24,7 @@ LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT",120))  # default = 120
 #it can change depends on the model used 
 MODEL_NAME = os.getenv("MODEL_NAME", "nvidia/llama-3.1-nemotron-70b-instruct") 
 NSGA2_FILE = Path("/app/results/storage/baseline/nsga2_result.json")
+TOPSIS_RESULTS_DIR = NSGA2_FILE.parent / "topsis"
 
 #client will call /optimizer_nsag2/offers endpoint 
 #first function is called by the client and then agent start############################################################       
@@ -288,9 +291,60 @@ def get_metrics():
 
 ###########################################################################################################################################
 # load the offer from local file instead of running the optimizer to save time during development and testing
+def load_nsga2_data_from_file():
+    return json.loads(NSGA2_FILE.read_text(encoding="utf-8"))
+
+
 def load_offers_from_file():
-    data = json.loads(NSGA2_FILE.read_text(encoding="utf-8"))
+    data = load_nsga2_data_from_file()
     return data["front_0"]["solutions_front_0"]
+
+######################################################################################################################
+def get_topsis_rankings(save_results=True):
+    data = load_offers_from_file()
+    rankings = rank_use_cases(data=data, use_cases=DEFAULT_USE_CASES, weights=[1, 1, 1, 1])
+
+    if save_results:
+        return save_rankings(rankings, output_dir=TOPSIS_RESULTS_DIR, source_json=NSGA2_FILE)
+
+    return rankings
+#####################################################################################################################
+#####################################################################################################################
+@app.route("/ranking/topsis", methods=["GET", "POST"])
+def ranking_topsis():
+    try:
+        body = request.get_json(silent=True) if request.method == "POST" else None
+        save_arg = request.args.get("save")
+        save_results = True
+
+        if isinstance(body, dict) and "save" in body:
+            save_value = body["save"]
+            if isinstance(save_value, str):
+                save_results = save_value.strip().lower() not in {"0", "false", "no"}
+            else:
+                save_results = bool(save_value)
+        elif save_arg is not None:
+            save_results = save_arg.strip().lower() not in {"0", "false", "no"}
+
+        payload = get_topsis_rankings(save_results=save_results)
+        return jsonify({
+            "status": "success",
+            "saved": save_results,
+            **payload,
+        }), 200
+    except FileNotFoundError:
+        return jsonify({
+            "status": "failed",
+            "error": f"NSGA-II result file not found: {NSGA2_FILE}"
+        }), 404
+    except Exception as exc:
+        app.logger.exception("ranking_topsis failed")
+        return jsonify({
+            "status": "failed",
+            "error": str(exc)
+        }), 500
+#####################################################################################################################
+
 # prepering the offer to be sent to the agent 
 def compact_offer(offer):
     kpis = offer.get("kpis", {})
