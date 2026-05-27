@@ -170,7 +170,7 @@ gene_space = [
 ]
 
 ga_instance = pygad.GA(
-    num_generations=100,
+    num_generations=80,
     sol_per_pop=60,
     num_parents_mating=10,
     num_genes=12,
