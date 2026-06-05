@@ -3,7 +3,7 @@ import json
 import numpy as np
 from pathlib import Path
 
-MCS_TABLE_PATH = Path("tables/mcs_table_pdsch_38_214_table1.json")
+MCS_TABLE_PATH = Path("./mcs_table_pdsch_38_214_table1.json")
 with open(MCS_TABLE_PATH, "r", encoding="utf-8") as f:
     _mcs = json.load(f)
 
@@ -12,7 +12,7 @@ MCS_ROWS = _mcs["rows"] if "rows" in _mcs else _mcs
 rng = np.random.default_rng()
 SLICE_NAMES = ("eMBB", "URLLC", "mMTC")
 # I should replace it with more realstic values 
-kappa = 0.8
+# kappa_run = 0.8
 Q_28 = 6
 R_28 = 0.948
 alpha = 1.0
@@ -64,12 +64,19 @@ def within_global_limits(candidate, B_max, C_max, P_max, S_max):
         sum(candidate[s]["storage"] for s in SLICE_NAMES) <= S_max
     )
 ###########################################################################
+# calculate kappa 
 
+def sample_kappa_map(rng):
+    return {
+        "eMBB": float(rng.uniform(0.75, 0.95)),
+        "URLLC": float(rng.uniform(0.70, 0.90)),
+        "mMTC": float(rng.uniform(0.65, 0.85)),
+    }
 
 #unique MCS generator
 def generate_unique_imcs():
-    # pick 3 different IMCS values from 0..28
-    picks = rng.choice(np.arange(0, 29), size=3, replace=False)
+    # pick 3 different IMCS values from 14..20
+    picks = rng.choice(np.arange(14,21), size=3, replace=False)
     return {
         "eMBB": int(picks[0]),
         "URLLC": int(picks[1]),
@@ -79,10 +86,10 @@ def generate_unique_imcs():
 def compute_throughput(candidate, slice_name, imcs_map):
     b = float(candidate[slice_name]["bandwidth"])
     imcs = imcs_map[slice_name]
-    row = MCS_ROWS[str(imcs)]      # from your JSON table
+    row = MCS_ROWS[str(imcs)]
     Qm = float(row["Qm"])
     R = float(row["R_x1024"]) / 1024.0
-    return kappa * Qm * R * b
+    return kappa_run[slice_name] * Qm * R * b
 
 # def compute_throughput(candidate, slice_name):
 #     # maybe i should make it random to be more realstic and dynamic, but for testing purposes i will use a simple linear function of the allocated bandwidth.
@@ -104,20 +111,35 @@ def decode_solution(solution):
         "mMTC":  {"bandwidth": solution[8], "compute": solution[9], "power": solution[10], "storage": solution[11]},
     }
 
-def compute_latency(candidate, slice_name):
-    T = compute_throughput(candidate, slice_name) #throughput in bits per second     
-    S_pkt = 1500 * 8                         # packet size in bits
-    m = (T * 1e6) / S_pkt # service rate in packets per second
+# def compute_latency(candidate, slice_name):
+#     T = compute_throughput(candidate, slice_name) #throughput in bits per second     
+#     S_pkt = 1500 * 8                         # packet size in bits
+#     m = (T * 1e6) / S_pkt # service rate in packets per second
+#     if m <= 0:
+#         return float('inf')  # Infinite latency if service rate is zero or negative
+#     L_fix_i = 1 / m  # fixed latency component (transmission time)
+#     lambda_i = arrival_rates[slice_name]
+#     rho = lambda_i / (m + 1e-6)
+#     if rho >= 1.0:
+#        return float("inf")
+#     Latency = L_fix_i + 1 / (m * (1 - rho + 1e-6))
+#     Latency_ms = converting_latency_to_milliseconds(Latency)
+#     return  LATENCY_PRIORITY[slice_name] * Latency_ms
+
+#next step comply it with 3gpp 
+def compute_latency(candidate, slice_name, imcs_map):
+    T = compute_throughput(candidate, slice_name, imcs_map)
+    S_pkt = 1500 * 8
+    m = (T * 1e6) / S_pkt
     if m <= 0:
-        return float('inf')  # Infinite latency if service rate is zero or negative
-    L_fix_i = 1 / m  # fixed latency component (transmission time)
-    lambda_i = arrival_rates[slice_name]
-    rho = lambda_i / (m + 1e-6)
+        return float('inf')
+    rho = arrival_rates[slice_name] / (m + 1e-6)
     if rho >= 1.0:
-       return float("inf")
-    Latency = L_fix_i + 1 / (m * (1 - rho + 1e-6))
+        return float("inf")
+    Latency = (1 / m) + 1 / (m * (1 - rho + 1e-6))
     Latency_ms = converting_latency_to_milliseconds(Latency)
-    return  LATENCY_PRIORITY[slice_name] * Latency_ms
+    return LATENCY_PRIORITY[slice_name] * Latency_ms
+
 
 def compute_throughput_all(candidate):
     # eMBB
@@ -129,10 +151,17 @@ def compute_throughput_all(candidate):
     return T_e, T_u, T_m
 
 
+# def compute_cost(candidate, slice_name, alpha):
+#     c = candidate[slice_name]["compute"]
+#     s = candidate[slice_name]["storage"]
+#     return alpha * (c + s) # Cost from compute+storage 
+def sample_alpha(rng):
+    return float(rng.uniform(0.8, 5.0))
+
 def compute_cost(candidate, slice_name, alpha):
     c = candidate[slice_name]["compute"]
     s = candidate[slice_name]["storage"]
-    return alpha * (c + s) # Cost from compute+storage 
+    return alpha * (c + s)
 
 def compute_energy(candidate, slice_name):
     # E_i = p_i
@@ -157,9 +186,8 @@ def compute_energy(candidate, slice_name):
 #     }
 def aggregate_kpis(candidate, alpha):
     imcs_map = generate_unique_imcs()
-
     throughput = {s: compute_throughput(candidate, s, imcs_map) for s in SLICE_NAMES}
-    latency_ms = {s: compute_latency(candidate, s) for s in SLICE_NAMES}
+    latency_ms = {s: compute_latency(candidate, s, imcs_map) for s in SLICE_NAMES}
     cost_eur = {s: compute_cost(candidate, s, alpha) for s in SLICE_NAMES}
     energy = {s: compute_energy(candidate, s) for s in SLICE_NAMES}
 
@@ -175,23 +203,28 @@ def aggregate_kpis(candidate, alpha):
         "energy_total": sum(energy.values()),
     }
 
+#checking the global constraints 
+def satisfies_constraints(candidate, kpis):
+    if not within_global_limits(candidate, B_max, C_max, P_max, S_max):
+        return False
+
+    phase = PHASE_CONSTRAINTS["PA"]
+    for s in SLICE_NAMES:
+        if kpis["throughput"][s] < phase[s]["throughput_min"]:
+            return False
+        if kpis["latency_ms"][s] > phase[s]["latency_max"]:
+            return False
+        if kpis["cost_eur"][s] > phase[s]["cost_max"]:
+            return False
+    return True
+
 # testbed cpabbilities and user requirements, we will use it to test the fitness function and the structure of the candidate solution
 def fitness_func(ga_instance, solution, solution_idx):
     candidate = decode_solution(solution)
 
-    if not within_global_limits(candidate, B_max, C_max, P_max, S_max):
-         return BAD_FITNESS
-
     kpis = aggregate_kpis(candidate, alpha)
-    phase = PHASE_CONSTRAINTS["PA"]
-
-    for s in SLICE_NAMES:
-        if kpis["throughput"][s] < phase[s]["throughput_min"]:
-             return BAD_FITNESS
-        if kpis["latency_ms"][s] > phase[s]["latency_max"]:
-            return BAD_FITNESS
-        if kpis["cost_eur"][s] > phase[s]["cost_max"]:
-            return BAD_FITNESS
+    if not satisfies_constraints(candidate, kpis):
+        return BAD_FITNESS
 
     return [
          kpis["throughput_total"],
@@ -213,19 +246,24 @@ gene_space = [
 
 ga_instance = pygad.GA(
     num_generations=80,
-    sol_per_pop=60,
+    sol_per_pop=200,#60
     num_parents_mating=10,
     num_genes=12,
     gene_space=gene_space,
     # gene_constraint=gene_constraint,
     fitness_func=fitness_func,
     parent_selection_type="nsga2",
-    mutation_percent_genes=10,
+    mutation_percent_genes=70,
     crossover_probability=0.9,
     # save_solutions=True,
     # save_best_solutions=True,
 )
 def run_optimizer():
+    global kappa_run
+    rng_run = np.random.default_rng()   # or np.random.default_rng(seed)
+    kappa_run = sample_kappa_map(rng_run)
+    #for cost
+    alpha = sample_alpha(rng_run)
     ga_instance.run()
     # do not generate by random solution and then decode it to get the KPIs, instead directly use the candidate solution example_candidate to compute the KPIs and check the global limits, this is just for testing the functions and the structure of the candidate solution, in actual implementation we will use the solutions generated by the GA and decode them to get the user required KPIs and check the global limits, so we will replace the example_candidate user requirments 
     solution, solution_fitness, solution_idx = ga_instance.best_solution(ga_instance.last_generation_fitness)
@@ -240,6 +278,9 @@ def run_optimizer():
         solution_i = ga_instance.population[idx]
         candidate_i = decode_solution(solution_i)
         kpis_i = aggregate_kpis(candidate_i, alpha)
+
+        if not satisfies_constraints(candidate_i, kpis_i):
+           continue
 
         front_0_solution = {
             "id": int(id),
