@@ -16,6 +16,6 @@ COPY . .
 # Expose the port the Flask application will be running on
 EXPOSE 5000
 
-# CMD ["python", "non_dominated_sorting_algorithm_2.py"]
+CMD ["python", "non_dominated_sorting_algorithm.py"]
 
-CMD ["gunicorn", "-w", "2", "-k", "gthread", "--threads", "8", "-b", "0.0.0.0:5000", "server:app"]
+# CMD ["gunicorn", "-w", "2", "-k", "gthread", "--threads", "8", "-b", "0.0.0.0:5000", "server:app"]

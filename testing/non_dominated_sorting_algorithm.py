@@ -245,8 +245,8 @@ gene_space = [
 ]
 
 ga_instance = pygad.GA(
-    num_generations=80,
-    sol_per_pop=200,#60
+    num_generations=160,
+    sol_per_pop=500,#60
     num_parents_mating=10,
     num_genes=12,
     gene_space=gene_space,
@@ -273,14 +273,14 @@ def run_optimizer():
     front_0_data = {
         "solutions_front_0": []
     }
-    front_0 = ga_instance.pareto_fronts[0]
+    front_0 = ga_instance.pareto_fronts[1]
     for id, (idx, fitness) in enumerate(front_0, start=1):
         solution_i = ga_instance.population[idx]
         candidate_i = decode_solution(solution_i)
         kpis_i = aggregate_kpis(candidate_i, alpha)
 
-        if not satisfies_constraints(candidate_i, kpis_i):
-           continue
+        # if not satisfies_constraints(candidate_i, kpis_i):
+        #    continue
 
         front_0_solution = {
             "id": int(id),

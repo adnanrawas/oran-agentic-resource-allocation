@@ -1,0 +1,11 @@
+services:
+  testing:
+    build:
+      context: ./testing
+      dockerfile: Dockerfile.testing
+    container_name: testing
+    ports:
+      - "9000:9000"
+    restart: unless-stopped
+    volumes:
+      - ./results:/app/results

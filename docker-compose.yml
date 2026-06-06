@@ -4,7 +4,6 @@ x-db-dependency: &db_depends
     postgres:
       condition: service_healthy
       
-
 services:
   master:
       restart: unless-stopped
