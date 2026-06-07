@@ -15,6 +15,7 @@ DEFAULT_USE_CASES = [
         "latency_max": 10.0,
         "cost_max": 200.0,
         "energy_max": 100.0,
+        "weights": [0.5, 0.2, 0.2, 0.1],
     },
     {
         "name": "Factory-Ops",
@@ -23,6 +24,7 @@ DEFAULT_USE_CASES = [
         "latency_max": 2.0,
         "cost_max": 200.0,
         "energy_max": 100.0,
+        "weights": [0.2, 0.5, 0.2, 0.1],
     },
     {
         "name": "IoT-Sense",
@@ -31,10 +33,11 @@ DEFAULT_USE_CASES = [
         "latency_max": 10.0,
         "cost_max": 50.0,
         "energy_max": 100.0,
+        "weights": [0.2, 0.2, 0.3, 0.3],
+
     },
 ]
 
-DEFAULT_WEIGHTS = [1, 1, 1, 1]
 CRITERION_TYPE = ["max", "min", "min", "min"]
 
 def _safe_name(value: str) -> str:
@@ -55,15 +58,16 @@ def _extract_solutions(data):
 
 def rank_use_cases(data, use_cases=None, weights=None):
     use_cases = use_cases or DEFAULT_USE_CASES
-    weights = weights or DEFAULT_WEIGHTS
+    default_weights = [1, 1, 1, 1]
+    weights = weights or default_weights
     solutions = _extract_solutions(data)
-
     summary_rows = []
     all_results = []
 
     for case in use_cases:
         slice_name = case["slice"]
         case_name = case["name"]
+        case_weights = case.get("weights", weights )
 
         rows = []
         for solution in solutions:
@@ -87,6 +91,7 @@ def rank_use_cases(data, use_cases=None, weights=None):
                     "cost": cst,
                     "energy": eng,
                     "feasible": feasible,
+                  
                 }
             )
 
@@ -101,7 +106,7 @@ def rank_use_cases(data, use_cases=None, weights=None):
         dataset = work_df[["throughput", "latency", "cost", "energy"]].to_numpy(dtype=float)
         scores = topsis_method(
             dataset=dataset,
-            weights=weights,
+            weights=case_weights,
             criterion_type=CRITERION_TYPE,
             graph=False,
             verbose=False,
@@ -123,6 +128,7 @@ def rank_use_cases(data, use_cases=None, weights=None):
                 "feasible_only_mode": not fallback_to_all,
                 "top1_offer_id": int(top1["offer_id"]),
                 "top1_score": float(top1["topsis_score"]),
+                "weights": case_weights,
             }
         )
         all_results.append(
@@ -137,6 +143,7 @@ def rank_use_cases(data, use_cases=None, weights=None):
                 },
                 "fallback_to_all_offers": fallback_to_all,
                 "ranking": ranked.to_dict(orient="records"),
+                "weights": case_weights,
             }
         )
 
@@ -159,7 +166,6 @@ def _write_rankings_to_dir(rankings, target_dir, source_json):
         "",
         f"- source_json: `{source_json}`" if source_json else "- source_json: `unknown`",
         f"- criterion_type: {rankings['criterion_type']}",
-        f"- weights: {rankings['weights']}",
         "",
         summary_df.to_string(index=False),
         "",
@@ -184,7 +190,7 @@ def _write_rankings_to_dir(rankings, target_dir, source_json):
             f"- cost_max: {constraints['cost_max']}",
             f"- energy_max: {constraints['energy_max']}",
             f"- criterion_type: {rankings['criterion_type']}",
-            f"- weights: {rankings['weights']}",
+            f"- weights: {result['weights']}",
             f"- fallback_to_all_offers: {result['fallback_to_all_offers']}",
             "",
             ranked_df.to_string(index=False),

@@ -2,7 +2,7 @@ import pygad
 import json
 import numpy as np
 from pathlib import Path
-
+FIXED_IMCS = 28 # mcs 28 
 MCS_TABLE_PATH = Path("./mcs_table_pdsch_38_214_table1.json")
 with open(MCS_TABLE_PATH, "r", encoding="utf-8") as f:
     _mcs = json.load(f)
@@ -12,22 +12,74 @@ MCS_ROWS = _mcs["rows"] if "rows" in _mcs else _mcs
 rng = np.random.default_rng()
 SLICE_NAMES = ("eMBB", "URLLC", "mMTC")
 # I should replace it with more realstic values 
-# kappa_run = 0.8
+kappa_run = 0.8
 Q_28 = 6
 R_28 = 0.948
-alpha = 1.0
+alpha = 0.80
 # creating random arrival rates for each slice type
 #3GPP TSG RAN WG1 #106b-e
-arrival_rates = {
-    "eMBB": float(rng.uniform(60, 120)),
-    "URLLC": float(rng.uniform(60, 70)),
-    "mMTC": float(rng.uniform(80, 200)),
-}
+# arrival_rates = {
+#     "eMBB": float(rng.uniform(60, 120)),
+#     "URLLC": float(rng.uniform(60, 70)),
+#     "mMTC": float(rng.uniform(80, 200)),
+# }
 LATENCY_PRIORITY = {
     "URLLC": 0.3,
     "eMBB": 1.0,
     "mMTC": 2.0,
 }
+
+#############################################################################################
+#arrival rate calculation 
+
+PACKET_BITS = 1500 * 8
+
+def bitrate_to_arrival_rate(bps, activity_factor=1.0, packet_bits=PACKET_BITS):
+    return (bps * activity_factor) / packet_bits
+
+def low_congestion_arrival_rates():
+    return {
+        # TS 22.261 V20.6.0
+        # Table 7.1-1, page 94
+        # Scenario: Rural macro
+        # Experienced data rate (DL) = 50 Mbit/s
+        # Activity factor = 20%
+        "eMBB": bitrate_to_arrival_rate(50e6, activity_factor=0.20),
+
+        # TS 22.261 V20.6.0
+        # Table 7.2.3.2-1, page 96
+        # Scenario: Wireless road-side infrastructure backhaul
+        # User experienced data rate = 10 Mbit/s
+        "URLLC": bitrate_to_arrival_rate(10e6),
+
+        # TS 22.261 V20.6.0
+        # Table 7.5.2-1, pages 103-104
+        # Scenario/Profile: Highly reliable machine type communication
+        # Example row: Medical monitoring
+        # Bit rate < 1 Mbit/s
+        "mMTC": bitrate_to_arrival_rate(1e6),
+    }
+
+### i should make copliant with 3gpp and use the actual values from the paper, but for testing purposes i will use random values within the ranges mentioned in the paper, i will adjust them later based on the actual system capacity and requirements, also i should consider different scenarios of congestion levels and user requirements to test the algorithm under different conditions, this is just an example structure for the scenarios, we can adjust it based on the actual system capacity and requirements.
+SCENARIOS = {
+    "low_congestion": {
+        "arrival_rates": low_congestion_arrival_rates(),
+        "fixed_imcs": FIXED_IMCS,
+    },
+    "moderate_congestion": {
+        "arrival_rates": {},
+        "fixed_imcs": FIXED_IMCS,
+    },
+    "high_congestion": {
+        "arrival_rates": {},
+        "fixed_imcs": FIXED_IMCS,
+    },
+}
+
+SCENARIO_NAME = "low_congestion"
+SCENARIO = SCENARIOS[SCENARIO_NAME]
+arrival_rates = SCENARIO["arrival_rates"]
+FIXED_IMCS = SCENARIO["fixed_imcs"]
 ##########################################################################################################
 # bad fitness value
 BAD_FITNESS = [-1e12, -1e12, -1e12, -1e12]
@@ -73,23 +125,30 @@ def sample_kappa_map(rng):
         "mMTC": float(rng.uniform(0.65, 0.85)),
     }
 
-#unique MCS generator
-def generate_unique_imcs():
-    # pick 3 different IMCS values from 14..20
-    picks = rng.choice(np.arange(14,21), size=3, replace=False)
-    return {
-        "eMBB": int(picks[0]),
-        "URLLC": int(picks[1]),
-        "mMTC": int(picks[2]),
-    }
+# #unique MCS generator
+# def generate_unique_imcs():
+#     # pick 3 different IMCS values from 14..20
+#     picks = rng.choice(np.arange(14,21), size=3, replace=False)
+#     return {
+#         "eMBB": int(picks[0]),
+#         "URLLC": int(picks[1]),
+#         "mMTC": int(picks[2]),
+#     }
 
+def get_imcs_map():
+    return {
+        "eMBB": FIXED_IMCS,
+        "URLLC": FIXED_IMCS,
+        "mMTC": FIXED_IMCS,
+    }
 def compute_throughput(candidate, slice_name, imcs_map):
     b = float(candidate[slice_name]["bandwidth"])
     imcs = imcs_map[slice_name]
     row = MCS_ROWS[str(imcs)]
     Qm = float(row["Qm"])
     R = float(row["R_x1024"]) / 1024.0
-    return kappa_run[slice_name] * Qm * R * b
+    # return kappa_run[slice_name] * Qm * R * b
+    return kappa_run* Qm * R * b
 
 # def compute_throughput(candidate, slice_name):
 #     # maybe i should make it random to be more realstic and dynamic, but for testing purposes i will use a simple linear function of the allocated bandwidth.
@@ -130,22 +189,23 @@ def decode_solution(solution):
 def compute_latency(candidate, slice_name, imcs_map):
     T = compute_throughput(candidate, slice_name, imcs_map)
     S_pkt = 1500 * 8
-    m = (T * 1e6) / S_pkt
-    if m <= 0:
+    service_rate = (T * 1e6) / S_pkt  # 1000000 bit per second to bit per second, and then divide by packet size to get service rate in packets per second
+    if service_rate <= 0:
         return float('inf')
-    rho = arrival_rates[slice_name] / (m + 1e-6)
+    # rho = arrival_rates[slice_name] / (service_rate + 1e-6)
+    rho = arrival_rates[slice_name] /(service_rate + 1e-6) # later i can make it for other senarios 
     if rho >= 1.0:
         return float("inf")
-    Latency = (1 / m) + 1 / (m * (1 - rho + 1e-6))
+    Latency = (1 / service_rate) + 1 / (service_rate * (1 - rho + 1e-6))
     Latency_ms = converting_latency_to_milliseconds(Latency)
     return LATENCY_PRIORITY[slice_name] * Latency_ms
 
 
 def compute_throughput_all(candidate):
     # eMBB
-    T_e = compute_throughput(candidate, "eMBB")
+    T_e = compute_throughput(candidate, "eMBB", get_imcs_map())
     # URLLC
-    T_u = compute_throughput(candidate, "URLLC")
+    T_u = compute_throughput(candidate, "URLLC", get_imcs_map())
     # mMTC
     T_m = compute_throughput(candidate, "mMTC")
     return T_e, T_u, T_m
@@ -185,7 +245,7 @@ def compute_energy(candidate, slice_name):
 #         "energy_total": sum(energy.values()),
 #     }
 def aggregate_kpis(candidate, alpha):
-    imcs_map = generate_unique_imcs()
+    imcs_map = get_imcs_map()
     throughput = {s: compute_throughput(candidate, s, imcs_map) for s in SLICE_NAMES}
     latency_ms = {s: compute_latency(candidate, s, imcs_map) for s in SLICE_NAMES}
     cost_eur = {s: compute_cost(candidate, s, alpha) for s in SLICE_NAMES}
@@ -245,15 +305,15 @@ gene_space = [
 ]
 
 ga_instance = pygad.GA(
-    num_generations=160,
-    sol_per_pop=500,#60
+    num_generations=80,
+    sol_per_pop=60,#60
     num_parents_mating=10,
     num_genes=12,
     gene_space=gene_space,
     # gene_constraint=gene_constraint,
     fitness_func=fitness_func,
     parent_selection_type="nsga2",
-    mutation_percent_genes=70,
+    mutation_percent_genes=30,
     crossover_probability=0.9,
     # save_solutions=True,
     # save_best_solutions=True,
@@ -261,9 +321,9 @@ ga_instance = pygad.GA(
 def run_optimizer():
     global kappa_run
     rng_run = np.random.default_rng()   # or np.random.default_rng(seed)
-    kappa_run = sample_kappa_map(rng_run)
+    # kappa_run = sample_kappa_map(rng_run)
     #for cost
-    alpha = sample_alpha(rng_run)
+    # alpha = sample_alpha(rng_run)
     ga_instance.run()
     # do not generate by random solution and then decode it to get the KPIs, instead directly use the candidate solution example_candidate to compute the KPIs and check the global limits, this is just for testing the functions and the structure of the candidate solution, in actual implementation we will use the solutions generated by the GA and decode them to get the user required KPIs and check the global limits, so we will replace the example_candidate user requirments 
     solution, solution_fitness, solution_idx = ga_instance.best_solution(ga_instance.last_generation_fitness)
@@ -273,14 +333,14 @@ def run_optimizer():
     front_0_data = {
         "solutions_front_0": []
     }
-    front_0 = ga_instance.pareto_fronts[1]
+    front_0 = ga_instance.pareto_fronts[0]
     for id, (idx, fitness) in enumerate(front_0, start=1):
         solution_i = ga_instance.population[idx]
         candidate_i = decode_solution(solution_i)
         kpis_i = aggregate_kpis(candidate_i, alpha)
 
-        # if not satisfies_constraints(candidate_i, kpis_i):
-        #    continue
+        if not satisfies_constraints(candidate_i, kpis_i):
+           continue
 
         front_0_solution = {
             "id": int(id),
@@ -302,8 +362,45 @@ def run_optimizer():
 
         front_0_data["solutions_front_0"].append(front_0_solution)
 
-
     result = {
+    "scenario": {
+    "name": SCENARIO_NAME,
+    "congestion_level": SCENARIO_NAME,
+    "mcs_mode": "fixed",
+    "fixed_imcs": int(FIXED_IMCS),
+    "packet_bits": int(PACKET_BITS),
+    "arrival_rate_unit": "packets_per_second",
+    "arrival_rates": {k: float(v) for k, v in arrival_rates.items()},
+    "alpha": float(alpha),
+    "kappa_run": float(kappa_run),
+    "sources": {
+        "eMBB": {
+            "spec": "3GPP TS 22.261 V20.6.0 (2026-03)",
+            "page": 94,
+            "table": "Table 7.1-1",
+            "scenario": "Rural macro",
+            "experienced_data_rate_dl_mbps": 50,
+            "activity_factor": 0.20
+        },
+        "URLLC": {
+            "spec": "3GPP TS 22.261 V20.6.0 (2026-03)",
+            "page": 96,
+            "table": "Table 7.2.3.2-1",
+            "scenario": "Wireless road-side infrastructure backhaul",
+            "user_experienced_data_rate_mbps": 10,
+            "max_end_to_end_latency_ms": 30,
+            "reliability_percent": 99.999
+        },
+        "mMTC": {
+            "spec": "3GPP TS 22.261 V20.6.0 (2026-03)",
+            "pages": "103-104",
+            "table": "Table 7.5.2-1",
+            "scenario": "Highly reliable machine type communication",
+            "example_profile": "Medical monitoring",
+            "bit_rate_anchor_mbps": 1
+        }
+    }
+},
         "resources": {
             "best_resources_vector": [float(x) for x in solution],
             "best_fitness": [float(x) for x in solution_fitness],
@@ -357,5 +454,9 @@ def run_optimizer():
 
 if __name__ == "__main__":
     result = run_optimizer()
-    with open("results/nsga2_result.json", "w") as f:
+    # with open("results/nsga2_result.json", "w") as f:
+    output_file = f"results/nsga2_{SCENARIO_NAME}.json"
+    with open(output_file, "w") as f:
       json.dump(result, f, indent=2)
+
+  

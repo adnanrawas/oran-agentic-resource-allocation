@@ -76,6 +76,13 @@ The following figures show preliminary NSGA-II results based on global resource 
 - Full JSON output: [nsga2_result.json](results/baseline/nsga2_result.json)
 <!-- - PowerPoint presentation: [NSGA-II_Baseline.pptx](slides/NSGA-II_Baseline.pptx) -->
 
+## Multi-Criteria Decision Service
+Run the TOPSIS-based ranking service from the host terminal:
+```bash
+curl -sS -X POST "http://localhost:9000/topsis/save-jsons" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+
 ## Scenario 1 – DU Resource Allocation
 ![Scenario 1](images/seanario1.jpg)
 ### The evaluation of the agent's results is performed using the following

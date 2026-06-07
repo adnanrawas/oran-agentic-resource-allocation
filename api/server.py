@@ -23,7 +23,7 @@ AGENT_URL = "http://agent:9000/select-best-offer"
 LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT",120))  # default = 120
 #it can change depends on the model used 
 MODEL_NAME = os.getenv("MODEL_NAME", "nvidia/llama-3.1-nemotron-70b-instruct") 
-NSGA2_FILE = Path("/app/results/storage/baseline/nsga2_result.json")
+NSGA2_FILE = Path("/app/results/storage/baseline/nsga2_low_congestion.json")
 TOPSIS_RESULTS_DIR = NSGA2_FILE.parent / "topsis"
 
 #client will call /optimizer_nsag2/offers endpoint 

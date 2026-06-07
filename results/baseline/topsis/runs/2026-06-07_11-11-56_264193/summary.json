@@ -1,0 +1,23 @@
+[
+  {
+    "use_case":"Media-Flex",
+    "slice":"eMBB",
+    "feasible_only_mode":true,
+    "top1_offer_id":6,
+    "top1_score":0.7709335987
+  },
+  {
+    "use_case":"Factory-Ops",
+    "slice":"URLLC",
+    "feasible_only_mode":true,
+    "top1_offer_id":5,
+    "top1_score":0.6643886063
+  },
+  {
+    "use_case":"IoT-Sense",
+    "slice":"mMTC",
+    "feasible_only_mode":true,
+    "top1_offer_id":2,
+    "top1_score":0.7390944007
+  }
+]

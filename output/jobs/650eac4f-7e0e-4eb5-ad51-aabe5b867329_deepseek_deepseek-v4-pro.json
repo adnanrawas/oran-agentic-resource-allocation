@@ -1,0 +1,5 @@
+{
+  "status": "failed",
+  "model": "deepseek/deepseek-v4-pro",
+  "error": "[Errno 2] No such file or directory: '/app/results/storage/baseline/nsga2_result.json'"
+}

@@ -1,0 +1,4 @@
+use_case,slice,feasible_only_mode,top1_offer_id,top1_score
+Media-Flex,eMBB,True,4,0.9240752059320665
+Factory-Ops,URLLC,True,10,0.8707104145241503
+IoT-Sense,mMTC,True,13,0.8003594868559959
