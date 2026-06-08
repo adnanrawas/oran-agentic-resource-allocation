@@ -4,7 +4,7 @@
     "slice":"eMBB",
     "feasible_only_mode":true,
     "top1_offer_id":3,
-    "top1_score":0.8812008594,
+    "top1_score":0.953776416,
     "weights":[
       0.5,
       0.2,
@@ -17,7 +17,7 @@
     "slice":"URLLC",
     "feasible_only_mode":true,
     "top1_offer_id":3,
-    "top1_score":0.9568068257,
+    "top1_score":0.9519553897,
     "weights":[
       0.2,
       0.5,
@@ -29,8 +29,8 @@
     "use_case":"IoT-Sense",
     "slice":"mMTC",
     "feasible_only_mode":true,
-    "top1_offer_id":4,
-    "top1_score":0.6992730962,
+    "top1_offer_id":6,
+    "top1_score":0.7467550371,
     "weights":[
       0.2,
       0.2,
